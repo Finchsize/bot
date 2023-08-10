@@ -5,37 +5,78 @@
 #include <WinAPIGdi.au3>
 #include <ScreenCapture.au3>
 #include <GDIPlus.au3>
+#include <WinAPIFiles.au3>
 
-HotKeySet("t", "jump");
+HotKeySet("t", "start_hunt");
 HotKeySet("q", "exit_bot");
-HotKeySet("m", "get_cords");
+HotKeySet("m", "get_cords_in_loop");
 
-$hWnd = 0x0033083A
-$hWndControl = 0x0063308
+$hWnd = 0x000504F0
+$hWndControl = 0x0000940A0
 $currentXpos = 0;
 $currentYpos = 0;
+$sImageFileExtenstion = ".tiff";
+$sImageFilePath = @ScriptDir & "\temp\cords" & $sImageFileExtenstion
 
 While 1
-	Sleep(200)
+	Sleep(20 + Random(1, 10, 1))
 WEnd
 
 Func start_hunt()
+	Local $isGoingLeft = true;
+While 1
+	Sleep(500 + Random(10, 100, 1))
+	update_cords()
 
+	;~ If($isGoingLeft) Then
+	;~ 	jump_left()
+	;~ Else
+	;~ 	jump_right()
+	;~ EndIf
+
+	;~ If $currentXpos > 900 AND $currentYpos > 550 Then
+	;~ 	$isGoingLeft = True
+	;~ EndIf
+	;~ ConsoleWrite("isGoingLeftLeft: " & $isGoingLeft & @CRLF)
+
+	;~ If $currentXpos < 630 And $currentYpos > 840 Then
+	;~ 	$isGoingLeft = False
+	;~ EndIf
+	;~ ConsoleWrite("isGoingLeftLeft: " & $isGoingLeft & @CRLF)
+
+WEnd
 EndFunc
 
-Func jump()
-	Sleep(50)
-	Local $xCordClick = 791
-	Local $yCordClick = 289
+Func jump_right()
+	jump(1274 + Random(0, 200, 1), 637)
+	Sleep(100)
+	scatter(1274, 637)
+EndFunc
+
+Func jump_left()
+	jump(675 - Random(0, 200, 1), 661)
+	Sleep(100)
+	scatter(675, 661)
+EndFunc
+
+Func jump($xCordClick, $yCordClick)
 	Local $wParam = 0x0008 ; hold ctrl
 	Local $lParam = _WinAPI_MakeLong($xCordClick,$yCordClick)
 	_SendMessage($hWndControl, $WM_LBUTTONDOWN, $wParam, $lParam)
 	_SendMessage($hWndControl, $WM_LBUTTONUP, $wParam, $lParam)
 EndFunc
 
-Func get_cords()
-		Local $sImageFileExtenstion = ".tiff";
-		Local $sImageFilePath = @ScriptDir & "\temp\cords" & $sImageFileExtenstion
+Func scatter($xCordClick, $yCordClick)
+	Local $lParam = _WinAPI_MakeLong($xCordClick,$yCordClick)
+	_SendMessage($hWndControl, $WM_RBUTTONDOWN, 0 , $lParam)
+	_SendMessage($hWndControl, $WM_RBUTTONUP, 0 , $lParam)
+EndFunc
+
+Func update_cords()
+	Capture_Window($hWnd, 292, 20, $sImageFilePath)
+EndFunc
+
+Func get_cords_in_loop()
 	While 1
 		Capture_Window($hWnd, 292, 20, $sImageFilePath)
 		Sleep(500)
@@ -94,36 +135,38 @@ Func Capture_Window($hWnd, $w, $h, $sImageFilePath)
 	_GDIPlus_ImageDispose($hImage)
 	_GDIPlus_ImageDispose($hGraphics)
     _GDIPlus_Shutdown()
-	
-	
-	;tesseract
+
+	Local $ResultTextPath = @ScriptDir & "\temp\cords"
+	read_cords_from_text_file($ResultTextPath)
+	run_tesseract($ResultTextPath)
+	;for debug
+	ConsoleWrite("Function Capture_Window execution time: " & TimerDiff($begin) & @CRLF);
+EndFunc 
+
+Func run_tesseract($ResultTextPath)
 	Local $TesseractExePath = "C:\Program Files\Tesseract-OCR\tesseract.exe"
-	$ResultTextPath = @ScriptDir & "\out"
-	Local $iPID = Run($TesseractExePath & " " &  $sImageFilePath & " stdout nobatch digits" , "" , @SW_HIDE, $STDERR_MERGED)
-	Local $sOutput = ""
-	Local $retries = 0;
-	Do
-		If $retries > 30 Then ExitLoop
-		$retries += 1
-		Sleep(10)
-		$sOutput &= StdoutRead($iPID)
-	Until @error
-	
-	ProcessClose($iPID)
-	
+	Local $iPID = Run($TesseractExePath & " " &  $sImageFilePath & " " & $ResultTextPath &" nobatch digits" , "" , @SW_HIDE, $RUN_CREATE_NEW_CONSOLE)
+	StdioClose($iPID)
+EndFunc
+
+Func read_cords_from_text_file($ResultTextPath)
+	Local $hFileOpen = FileOpen($ResultTextPath & ".txt", $FO_READ)
+	If $hFileOpen = -1 Then
+			ToolTip("An error occurred when reading the file. File Path: " & $ResultTextPath & ".txt", 30, 0)
+			Return
+	EndIf
+	Local $sOutput = FileRead($hFileOpen)
+	FileClose($hFileOpen)
 	Local $sOutputClean = StringReplace($sOutput, ".", "")
-	;Todo better trim right - need to remove white space and new line
-	$sOutputClean = StringTrimRight($sOutputClean, 2);
+	$sOutputClean = StringReplace($sOutputClean, @LF, "")
 	If StringLen($sOutputClean) == 6 Then
-		Local $sCordX = StringLeft($sOutputClean, 3)
-		Local $sCordY = StringRight($sOutputClean, 3)
-		ToolTip("Position x: " & $sCordX  & @CRLF & "Position y: " & $sCordY, 0, 30, "Raw position in game: " & $sOutput)
+		$currentXpos = StringLeft($sOutputClean, 3)
+		$currentYpos = StringRight($sOutputClean, 3)
+		ToolTip("Position x: " & $currentXpos  & @CRLF & "Position y: " & $currentYpos, 0, 30, "Raw position in game: " & $sOutput)
 	Else
 		ToolTip("Not found ", 0, 30, "Position not found" & StringLen($sOutput))
 	EndIf
-	
-	ConsoleWrite("Function Capture_Window execution time: " & TimerDiff($begin) & @CRLF);
-EndFunc 
+EndFunc
 
 Func exit_bot()
 	Exit
