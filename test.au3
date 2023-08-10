@@ -7,12 +7,18 @@
 #include <GDIPlus.au3>
 #include <WinAPIFiles.au3>
 
-HotKeySet("t", "start_hunt");
-HotKeySet("q", "exit_bot");
-HotKeySet("m", "get_cords_in_loop");
+HotKeySet("t", "start_hunt")
+HotKeySet("q", "exit_bot")
+HotKeySet("m", "get_cords_in_loop")
+HotKeySet("w", "jump_up")
+HotKeySet("a", "jump_left")
+HotKeySet("d", "jump_right")
+HotKeySet("s", "jump_down")
+HotKeySet("p", "jump_center")
+HotKeySet("r", "random_jump")
 
-$hWnd = 0x000E3294
-$hWndControl = 0x0000A40CC
+$hWnd = 0x000C063C
+$hWndControl = 0x000C013E0
 $currentXpos = 0;
 $currentYpos = 0;
 $sImageFileExtenstion = ".tiff";
@@ -25,11 +31,14 @@ WEnd
 Func start_hunt()
 	Local $isGoingLeft = true;
 While 1
-	Sleep(500 + Random(10, 100, 1))
+	Sleep(1000 + Random(10, 500, 1))
 	update_cords()
 
 	;random jump and cyclone
-	If Random(1, 3, 1) == 3 Then random_jump_and_cyclone()
+	If Random(1, 3, 1) == 3 Then
+		random_jump()
+		ContinueLoop
+	EndIf
 
 	If($isGoingLeft) Then
 		jump_left()
@@ -50,22 +59,41 @@ While 1
 WEnd
 EndFunc
 
-Func random_jump_and_cyclone()
-	jump(900 + Random(0, 500, 1), 100 + Random(0, 1000, 1))
-	Sleep(100 + Random(0, 20, 1))
-	ConsoleWrite("Random jump executed!")
+Func random_jump()
+	;jump(960+720, 540) left/right jump close to max range
+	;jump(960, 540-370) up/down jump close to max range
+	;jump(960+562, 540-260) diagonal jump ABSOLUTE max
+	While 1
+		Sleep(200 + Random(0, 300, 1))
+		jump(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1))
+		;ConsoleWrite("Random jump executed!" & @CRLF)
+	WEnd
 EndFunc
 
 Func jump_right()
-	jump(1274 + Random(0, 200, 1), 637 + Random(0, 200, 1))
-	Sleep(200 + Random(0, 20, 1))
-	scatter(1274 + Random(0, 120, 1), 637 + Random(0, 120, 1))
+	jump(1440, 540)
+	;jump(1274 + Random(0, 200, 1), 637 + Random(0, 200, 1))
+	;Sleep(100 + Random(0, 50, 1))
+	;scatter(1274 + Random(0, 120, 1), 637 + Random(0, 120, 1))
 EndFunc
 
 Func jump_left()
-	jump(675 - Random(0, 200, 1), 661 + Random(0, 200, 1))
-	Sleep(200 + Random(0, 20, 1))
-	scatter(675 + Random(0, 120, 1), 661 + Random(0, 120, 1))
+	jump(480, 540)
+	;jump(675 - Random(0, 200, 1), 661 + Random(0, 200, 1))
+	;Sleep(100 + Random(0, 50, 1))
+	;scatter(675 + Random(0, 120, 1), 661 + Random(0, 120, 1))
+EndFunc
+
+Func jump_up()
+	jump(960, 270)
+EndFunc
+
+Func jump_down()
+	jump(960, 810)
+EndFunc
+
+func jump_center()
+	jump(960, 540)
 EndFunc
 
 Func jump($xCordClick, $yCordClick)
