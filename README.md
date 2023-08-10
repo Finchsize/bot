@@ -10,7 +10,9 @@ Info:
 - jumping fast = disconnect
 - jumping to exactly the same spots = ban in jail
 
-- This random jump put acc into bot jail: @Edit - spamming any action in short period of time put character to jail
+- This random jump put acc into bot jail: 
+@Edit - spamming any action in short period of time put character to jail
+@Edit - jumping very slow in random period of times with randomized location also puts character to jail
 
 ```
 Func random_jump()

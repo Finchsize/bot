@@ -12,8 +12,6 @@
 HotKeySet("^t", "start_hunt")
 HotKeySet("^q", "exit_bot")
 HotKeySet("^m", "get_cords_in_loop")
-HotKeySet("^p", "jump_center")
-HotKeySet("^r", "random_jump")
 HotKeySet("^i", "get_window_handles")
 HotKeySet("!i", "exit_get_window_handles")
 
@@ -34,18 +32,20 @@ WEnd
 Func start_hunt()
 	Local $isGoingLeft = true;
 While 1
-	Sleep(850 + Random(0, 300, 1))
+	Sleep(750 + Random(0, 300, 1))
 	Local $begin = TimerInit()
 	If $currentXpos == 051 And $currentYpos == 051 Then
 		$iIsInBotCheck = True
 		ExitLoop
 	EndIf
-	update_cords()
+	;~ update_cords()
 
-	If Random(1, 3, 1) == 3 Then
+	;~ If Random(1, 3, 1) == 3 Then
 		random_jump()
-		ContinueLoop
-	EndIf
+		Sleep(400 + Random(0, 100, 1))
+		random_scatter()
+		;~ ContinueLoop
+	;~ EndIf
 
 	#cs Ape city go left and right in line
 	If($isGoingLeft) Then
@@ -70,11 +70,10 @@ EndFunc
 
 Func random_jump()
 	jump(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1))
-	;wait for scatter after the jump
-	Sleep(200 + Random(0, 100, 1))
-	;scatter in random location
+EndFunc
+
+Func random_scatter()
 	scatter(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1))
-	;ConsoleWrite("Random jump executed!" & @CRLF)
 EndFunc
 
 Func jump_right()
@@ -93,7 +92,7 @@ Func jump_down()
 	jump(960, 810)
 EndFunc
 
-func jump_center()
+Func jump_center()
 	jump(960, 540)
 EndFunc
 
@@ -102,6 +101,7 @@ Func jump($xCordClick, $yCordClick)
 	Local $lParam = _WinAPI_MakeLong($xCordClick, $yCordClick)
 	_SendMessage($hWndControl, $WM_LBUTTONDOWN, $wParam, $lParam)
 	_SendMessage($hWndControl, $WM_LBUTTONUP, $wParam, $lParam)
+	;~ ControlClick($hWnd, "", $hWndControl, "left", 1, $xCordClick, $yCordClick)
 EndFunc
 
 Func scatter($xCordClick, $yCordClick)
@@ -124,7 +124,7 @@ EndFunc
 
 Func Capture_Window($hWnd, $w, $h, $sImageFilePath)
 	;for debug
-	;$begin = TimerInit()
+	$begin = TimerInit()
 
 	;capture cords
     ;winapi part
@@ -132,15 +132,15 @@ Func Capture_Window($hWnd, $w, $h, $sImageFilePath)
 	Local $hMemDC = _WinAPI_CreateCompatibleDC($hDC_Capture)
 	Local $hBitmap = _WinAPI_CreateCompatibleBitmap($hDC_Capture, $w, $h)
 	_WinAPI_SelectObject($hMemDC, $hBitmap)
-	_WinAPI_PrintWindow($hWnd, $hMemDC)
-
+	_WinAPI_PrintWindow($hWnd, $hMemDC, True)
+	$afterWinApi = TimerInit()
 	;copy to gdi plus
 	_GDIPlus_Startup()
 	$hImage = _GDIPlus_BitmapCreateFromHBITMAP($hBitmap)
 	
 	;release all winapi handles
-	_WinAPI_DeleteObject($hDC_Capture)
 	_WinAPI_ReleaseDC($hWnd, $hDC_Capture)
+	_WinAPI_DeleteObject($hDC_Capture)
 	_WinAPI_DeleteDC($hMemDC)
 	_WinAPI_DeleteObject($hBitmap)
 	_WinAPI_DeleteDC($hDC_Capture)
@@ -187,7 +187,9 @@ Func Capture_Window($hWnd, $w, $h, $sImageFilePath)
 	read_cords_from_text_file($ResultTextPath)
 	run_tesseract($ResultTextPath)
 	;for debug
-	;ConsoleWrite("Function Capture_Window execution time: " & TimerDiff($begin) & @CRLF);
+	ConsoleWrite("Function Capture_Window execution time: " & TimerDiff($begin) & @CRLF);
+	ConsoleWrite("Function Capture_Window execution time: " & TimerDiff($afterWinApi) & @CRLF);
+	
 EndFunc 
 
 Func run_tesseract($ResultTextPath)
@@ -210,7 +212,7 @@ Func read_cords_from_text_file($ResultTextPath)
 		$currentXpos = StringLeft($sOutputClean, 3)
 		$currentYpos = StringRight($sOutputClean, 3)
 		;for debugging position processing
-		;ToolTip("Position x: " & $currentXpos  & @CRLF & "Position y: " & $currentYpos, 0, 30, "Raw position in game: " & $sOutput)
+		ToolTip("Position x: " & $currentXpos  & @CRLF & "Position y: " & $currentYpos, 0, 30, "Raw position in game: " & $sOutput)
 	Else
 		ToolTip("Not found ", 0, 30, "Position not found" & StringLen($sOutput))
 	EndIf
