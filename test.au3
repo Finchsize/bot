@@ -34,7 +34,7 @@ WEnd
 Func start_hunt()
 	Local $isGoingLeft = true;
 While 1
-	Sleep(1150 + Random(0, 300, 1))
+	Sleep(850 + Random(0, 300, 1))
 	Local $begin = TimerInit()
 	If $currentXpos == 051 And $currentYpos == 051 Then
 		$iIsInBotCheck = True
@@ -42,12 +42,12 @@ While 1
 	EndIf
 	update_cords()
 
-	;random jump
 	If Random(1, 3, 1) == 3 Then
 		random_jump()
 		ContinueLoop
 	EndIf
 
+	#cs Ape city go left and right in line
 	If($isGoingLeft) Then
 		jump_left()
 	Else
@@ -62,9 +62,9 @@ While 1
 	If $currentXpos < 630 And $currentYpos > 840 Then
 		$isGoingLeft = False
 	EndIf
-	ConsoleWrite("isGoingLeftLeft: " & $isGoingLeft & @CRLF)
-	ConsoleWrite("One random jump execution time: " & TimerDiff($begin) & @CRLF);
-
+	ConsoleWrite("isGoingLeftLeft: " & $isGoingLeft & @CRLF)		
+	#ce
+	ConsoleWrite("Hunt one cycle execution time (without wait): " & TimerDiff($begin) & @CRLF);
 WEnd
 EndFunc
 
@@ -105,9 +105,10 @@ Func jump($xCordClick, $yCordClick)
 EndFunc
 
 Func scatter($xCordClick, $yCordClick)
+	Local $wParam = 0x0008 ; hold ctrl
 	Local $lParam = _WinAPI_MakeLong($xCordClick,$yCordClick)
-	_SendMessage($hWndControl, $WM_RBUTTONDOWN, 0 , $lParam)
-	_SendMessage($hWndControl, $WM_RBUTTONUP, 0 , $lParam)
+	_SendMessage($hWndControl, $WM_RBUTTONDOWN, $wParam , $lParam)
+	_SendMessage($hWndControl, $WM_RBUTTONUP, $wParam , $lParam)
 EndFunc
 
 Func update_cords()
@@ -163,7 +164,6 @@ Func Capture_Window($hWnd, $w, $h, $sImageFilePath)
     _GDIPlus_ImageAttributesSetRemapTable($hIA, $aRemapTable)
 	_GDIPlus_GraphicsDrawImageRectRect($hGraphics, $hImageCropped, 0, 0, $w, $h, 0, 0, $w, $h, $hIA)
 	
-	
 	Local $iWidth = _GDIPlus_ImageGetWidth($hImageCropped)
 	Local $iHeight = _GDIPlus_ImageGetHeight($hImageCropped)
 	Local $tLock = _GDIPlus_BitmapLockBits($hImageCropped, 0, 0, $iWidth, $iHeight,  BitOR($GDIP_ILMWRITE, $GDIP_ILMREAD), $GDIP_PXF32ARGB)
@@ -173,14 +173,14 @@ Func Capture_Window($hWnd, $w, $h, $sImageFilePath)
 	  If $tPixel.color(($i)) <> 0xFFFFFFFF Then $tPixel.color(($i)) = 0xFF000000
 	Next
 	
-	;unlock and save
 	_GDIPlus_BitmapUnlockBits($hImageCropped, $tPixel)
 	_GDIPlus_ImageSaveToFile($hImageCropped, $sImageFilePath)
 	
 	;delete gdu plus handles
+	_GDIPlus_ImageAttributesDispose($hIA)
     _GDIPlus_ImageDispose($hImageCropped)
 	_GDIPlus_ImageDispose($hImage)
-	_GDIPlus_ImageDispose($hGraphics)
+	_GDIPlus_GraphicsDispose($hGraphics)
     _GDIPlus_Shutdown()
 
 	Local $ResultTextPath = @ScriptDir & "\temp\cords"
@@ -209,7 +209,8 @@ Func read_cords_from_text_file($ResultTextPath)
 	If StringLen($sOutputClean) == 6 Then
 		$currentXpos = StringLeft($sOutputClean, 3)
 		$currentYpos = StringRight($sOutputClean, 3)
-		ToolTip("Position x: " & $currentXpos  & @CRLF & "Position y: " & $currentYpos, 0, 30, "Raw position in game: " & $sOutput)
+		;for debugging position processing
+		;ToolTip("Position x: " & $currentXpos  & @CRLF & "Position y: " & $currentYpos, 0, 30, "Raw position in game: " & $sOutput)
 	Else
 		ToolTip("Not found ", 0, 30, "Position not found" & StringLen($sOutput))
 	EndIf
