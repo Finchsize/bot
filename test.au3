@@ -6,19 +6,22 @@
 #include <ScreenCapture.au3>
 #include <GDIPlus.au3>
 #include <WinAPIFiles.au3>
+#include <Array.au3>
+#include <GUIConstantsEx.au3>
 
-HotKeySet("t", "start_hunt")
-HotKeySet("q", "exit_bot")
-HotKeySet("m", "get_cords_in_loop")
-HotKeySet("w", "jump_up")
-HotKeySet("a", "jump_left")
-HotKeySet("d", "jump_right")
-HotKeySet("s", "jump_down")
-HotKeySet("p", "jump_center")
-HotKeySet("r", "random_jump")
+HotKeySet("^t", "start_hunt")
+HotKeySet("^q", "exit_bot")
+HotKeySet("^m", "get_cords_in_loop")
+HotKeySet("^p", "jump_center")
+HotKeySet("^r", "random_jump")
+HotKeySet("^i", "get_window_handles")
+HotKeySet("!i", "exit_get_window_handles")
 
-$hWnd = 0x000C063C
-$hWndControl = 0x000C013E0
+Global $iContinueGetHandles = True
+Global $iIsInBotCheck = False
+
+$hWnd = 0x004D1344
+$hWndControl = 0x000E063C
 $currentXpos = 0;
 $currentYpos = 0;
 $sImageFileExtenstion = ".tiff";
@@ -27,6 +30,57 @@ $sImageFilePath = @ScriptDir & "\temp\cords" & $sImageFileExtenstion
 While 1
 	Sleep(20 + Random(1, 10, 1))
 WEnd
+
+Func exit_get_window_handles()
+	ToolTip("")
+	$iContinueGetHandles = False
+EndFunc
+
+Func get_window_handles()
+	$iContinueGetHandles = True
+	While $iContinueGetHandles
+		AutoItSetOption("MouseCoordMode", 1)
+		$a_info = _Mouse_Win_GetInfo()
+		If @error Then Exit
+		AutoItSetOption("MouseCoordMode", 2)
+		Local $relativeMousePos = MouseGetPos()
+		$hWnd = $a_info[0]
+		$hWndControl = $a_info[1]
+		If ($iIsInBotCheck) Then
+			ConsoleWrite("Window hwnd = " & $a_info[0] & @CRLF & _
+			"Control hwnd = " & $a_info[1] & @CRLF & _
+			"Window Title = " & $a_info[2] & @CRLF & _
+			"Control Title = " & WinGetTitle($a_info[1]) & @CRLF & _
+			"Mouse X Pos global = " & $a_info[3] & @CRLF & _
+			"Mouse Y Pos global = " & $a_info[4] & @CRLF & _
+			"Mouse X Pos control = " & MouseGetPos()[0] & @CRLF & _
+			"Mouse X Pos control = " & MouseGetPos()[1])
+		EndIf
+		ToolTip("Window hwnd = " & $a_info[0] & @CRLF & _
+			"Control hwnd = " & $a_info[1] & @CRLF & _
+			"Window Title = " & $a_info[2] & @CRLF & _
+			"Control Title = " & WinGetTitle($a_info[1]) & @CRLF & _
+			"Mouse X Pos global = " & $a_info[3] & @CRLF & _
+			"Mouse Y Pos global = " & $a_info[4] & @CRLF & _
+			"Mouse X Pos control = " & MouseGetPos()[0] & @CRLF & _
+			"Mouse X Pos control = " & MouseGetPos()[1])
+		Sleep(500)
+	WEnd
+EndFunc
+
+Func _Mouse_Win_GetInfo()
+	Local $a_mpos = MouseGetPos()
+	If @error Then Return SetError(1, 0, 0)
+	Local $a_wfp = DllCall("user32.dll", "hwnd", "WindowFromPoint", "long", $a_mpos[0], "long", $a_mpos[1])
+	If @error Then Return SetError(2, 0, 0)
+	Local $a_ga = DllCall("user32.dll", "hwnd", "GetAncestor", "hwnd", $a_wfp[0], "int", 3); $GW_ROOTOWNER = 3
+	If @error Then Return SetError(3, 0, 0)
+	Local $a_ret[5] = [$a_ga[0], $a_wfp[0], WinGetTitle($a_ga[0]), $a_mpos[0], $a_mpos[1]]
+	;~ for debug
+	;~ ConsoleWrite("a_ga: " & _ArrayToString($a_ga) & @CRLF)
+	;~ ConsoleWrite("a_wfp: " & _ArrayToString($a_wfp) & @CRLF)
+	Return $a_ret
+EndFunc
 
 Func start_hunt()
 	Local $isGoingLeft = true;
@@ -61,9 +115,18 @@ EndFunc
 
 Func random_jump()
 	While 1
-		Sleep(500 + Random(0, 300, 1))
-		jump(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1))
+		Sleep(850 + Random(0, 50, 1))
+		Local $begin = TimerInit()
 		update_cords()
+		If $currentXpos == 051 And $currentYpos == 051 Then
+			$iIsInBotCheck = True
+			ExitLoop
+		EndIf
+		jump(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1))
+		;random scatter
+		Sleep(100 + Random(10, 100, 1))
+		scatter(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1))
+		ConsoleWrite("One random jump execution time: " & TimerDiff($begin) & @CRLF);
 		;ConsoleWrite("Random jump executed!" & @CRLF)
 	WEnd
 EndFunc
@@ -119,7 +182,9 @@ Func get_cords_in_loop()
 EndFunc
 
 Func Capture_Window($hWnd, $w, $h, $sImageFilePath)
-	$begin = TimerInit()
+	;for debug
+	;$begin = TimerInit()
+
 	;capture cords
     _GDIPlus_Startup()
 	Local $hDC_Capture = _WinAPI_GetDC($hWnd)
@@ -175,7 +240,7 @@ Func Capture_Window($hWnd, $w, $h, $sImageFilePath)
 	read_cords_from_text_file($ResultTextPath)
 	run_tesseract($ResultTextPath)
 	;for debug
-	ConsoleWrite("Function Capture_Window execution time: " & TimerDiff($begin) & @CRLF);
+	;ConsoleWrite("Function Capture_Window execution time: " & TimerDiff($begin) & @CRLF);
 EndFunc 
 
 Func run_tesseract($ResultTextPath)
