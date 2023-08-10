@@ -60,12 +60,10 @@ WEnd
 EndFunc
 
 Func random_jump()
-	;jump(960+720, 540) left/right jump close to max range
-	;jump(960, 540-370) up/down jump close to max range
-	;jump(960+562, 540-260) diagonal jump ABSOLUTE max
 	While 1
-		Sleep(200 + Random(0, 300, 1))
+		Sleep(500 + Random(0, 300, 1))
 		jump(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1))
+		update_cords()
 		;ConsoleWrite("Random jump executed!" & @CRLF)
 	WEnd
 EndFunc
