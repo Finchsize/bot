@@ -11,8 +11,8 @@ HotKeySet("t", "start_hunt");
 HotKeySet("q", "exit_bot");
 HotKeySet("m", "get_cords_in_loop");
 
-$hWnd = 0x000504F0
-$hWndControl = 0x0000940A0
+$hWnd = 0x000E3294
+$hWndControl = 0x0000A40CC
 $currentXpos = 0;
 $currentYpos = 0;
 $sImageFileExtenstion = ".tiff";
@@ -28,35 +28,44 @@ While 1
 	Sleep(500 + Random(10, 100, 1))
 	update_cords()
 
-	;~ If($isGoingLeft) Then
-	;~ 	jump_left()
-	;~ Else
-	;~ 	jump_right()
-	;~ EndIf
+	;random jump and cyclone
+	If Random(1, 3, 1) == 3 Then random_jump_and_cyclone()
 
-	;~ If $currentXpos > 900 AND $currentYpos > 550 Then
-	;~ 	$isGoingLeft = True
-	;~ EndIf
-	;~ ConsoleWrite("isGoingLeftLeft: " & $isGoingLeft & @CRLF)
+	If($isGoingLeft) Then
+		jump_left()
+	Else
+		jump_right()
+	EndIf
 
-	;~ If $currentXpos < 630 And $currentYpos > 840 Then
-	;~ 	$isGoingLeft = False
-	;~ EndIf
-	;~ ConsoleWrite("isGoingLeftLeft: " & $isGoingLeft & @CRLF)
+	If $currentXpos > 900 AND $currentYpos > 550 Then
+		$isGoingLeft = True
+	EndIf
+	ConsoleWrite("isGoingLeftLeft: " & $isGoingLeft & @CRLF)
+
+	If $currentXpos < 630 And $currentYpos > 840 Then
+		$isGoingLeft = False
+	EndIf
+	ConsoleWrite("isGoingLeftLeft: " & $isGoingLeft & @CRLF)
 
 WEnd
 EndFunc
 
+Func random_jump_and_cyclone()
+	jump(900 + Random(0, 500, 1), 100 + Random(0, 1000, 1))
+	Sleep(100 + Random(0, 20, 1))
+	ConsoleWrite("Random jump executed!")
+EndFunc
+
 Func jump_right()
-	jump(1274 + Random(0, 200, 1), 637)
-	Sleep(100)
-	scatter(1274, 637)
+	jump(1274 + Random(0, 200, 1), 637 + Random(0, 200, 1))
+	Sleep(200 + Random(0, 20, 1))
+	scatter(1274 + Random(0, 120, 1), 637 + Random(0, 120, 1))
 EndFunc
 
 Func jump_left()
-	jump(675 - Random(0, 200, 1), 661)
-	Sleep(100)
-	scatter(675, 661)
+	jump(675 - Random(0, 200, 1), 661 + Random(0, 200, 1))
+	Sleep(200 + Random(0, 20, 1))
+	scatter(675 + Random(0, 120, 1), 661 + Random(0, 120, 1))
 EndFunc
 
 Func jump($xCordClick, $yCordClick)
