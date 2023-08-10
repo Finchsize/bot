@@ -34,10 +34,15 @@ WEnd
 Func start_hunt()
 	Local $isGoingLeft = true;
 While 1
-	Sleep(1000 + Random(10, 500, 1))
+	Sleep(1150 + Random(0, 300, 1))
+	Local $begin = TimerInit()
+	If $currentXpos == 051 And $currentYpos == 051 Then
+		$iIsInBotCheck = True
+		ExitLoop
+	EndIf
 	update_cords()
 
-	;random jump and cyclone
+	;random jump
 	If Random(1, 3, 1) == 3 Then
 		random_jump()
 		ContinueLoop
@@ -58,40 +63,26 @@ While 1
 		$isGoingLeft = False
 	EndIf
 	ConsoleWrite("isGoingLeftLeft: " & $isGoingLeft & @CRLF)
+	ConsoleWrite("One random jump execution time: " & TimerDiff($begin) & @CRLF);
 
 WEnd
 EndFunc
 
 Func random_jump()
-	While 1
-		Sleep(850 + Random(0, 50, 1))
-		Local $begin = TimerInit()
-		update_cords()
-		If $currentXpos == 051 And $currentYpos == 051 Then
-			$iIsInBotCheck = True
-			ExitLoop
-		EndIf
-		jump(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1))
-		;random scatter
-		Sleep(100 + Random(10, 100, 1))
-		scatter(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1))
-		ConsoleWrite("One random jump execution time: " & TimerDiff($begin) & @CRLF);
-		;ConsoleWrite("Random jump executed!" & @CRLF)
-	WEnd
+	jump(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1))
+	;wait for scatter after the jump
+	Sleep(200 + Random(0, 100, 1))
+	;scatter in random location
+	scatter(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1))
+	;ConsoleWrite("Random jump executed!" & @CRLF)
 EndFunc
 
 Func jump_right()
 	jump(1440, 540)
-	;jump(1274 + Random(0, 200, 1), 637 + Random(0, 200, 1))
-	;Sleep(100 + Random(0, 50, 1))
-	;scatter(1274 + Random(0, 120, 1), 637 + Random(0, 120, 1))
 EndFunc
 
 Func jump_left()
 	jump(480, 540)
-	;jump(675 - Random(0, 200, 1), 661 + Random(0, 200, 1))
-	;Sleep(100 + Random(0, 50, 1))
-	;scatter(675 + Random(0, 120, 1), 661 + Random(0, 120, 1))
 EndFunc
 
 Func jump_up()
@@ -108,7 +99,7 @@ EndFunc
 
 Func jump($xCordClick, $yCordClick)
 	Local $wParam = 0x0008 ; hold ctrl
-	Local $lParam = _WinAPI_MakeLong($xCordClick,$yCordClick)
+	Local $lParam = _WinAPI_MakeLong($xCordClick, $yCordClick)
 	_SendMessage($hWndControl, $WM_LBUTTONDOWN, $wParam, $lParam)
 	_SendMessage($hWndControl, $WM_LBUTTONUP, $wParam, $lParam)
 EndFunc
@@ -135,13 +126,23 @@ Func Capture_Window($hWnd, $w, $h, $sImageFilePath)
 	;$begin = TimerInit()
 
 	;capture cords
-    _GDIPlus_Startup()
+    ;winapi part
 	Local $hDC_Capture = _WinAPI_GetDC($hWnd)
 	Local $hMemDC = _WinAPI_CreateCompatibleDC($hDC_Capture)
 	Local $hBitmap = _WinAPI_CreateCompatibleBitmap($hDC_Capture, $w, $h)
-	Local $hObject = _WinAPI_SelectObject($hMemDC, $hBitmap)
+	_WinAPI_SelectObject($hMemDC, $hBitmap)
 	_WinAPI_PrintWindow($hWnd, $hMemDC)
+
+	;copy to gdi plus
+	_GDIPlus_Startup()
 	$hImage = _GDIPlus_BitmapCreateFromHBITMAP($hBitmap)
+	
+	;release all winapi handles
+	_WinAPI_DeleteObject($hDC_Capture)
+	_WinAPI_ReleaseDC($hWnd, $hDC_Capture)
+	_WinAPI_DeleteDC($hMemDC)
+	_WinAPI_DeleteObject($hBitmap)
+	_WinAPI_DeleteDC($hDC_Capture)
 	
 	;crop image
 	$iX = _GDIPlus_ImageGetWidth($hImage)
@@ -164,7 +165,7 @@ Func Capture_Window($hWnd, $w, $h, $sImageFilePath)
 	
 	
 	Local $iWidth = _GDIPlus_ImageGetWidth($hImageCropped)
-	Local	$iHeight = _GDIPlus_ImageGetHeight($hImageCropped)
+	Local $iHeight = _GDIPlus_ImageGetHeight($hImageCropped)
 	Local $tLock = _GDIPlus_BitmapLockBits($hImageCropped, 0, 0, $iWidth, $iHeight,  BitOR($GDIP_ILMWRITE, $GDIP_ILMREAD), $GDIP_PXF32ARGB)
 	Local $tPixel = DllStructCreate("int color[" & $iWidth * $iHeight & "];", $tLock.scan0)
 
@@ -176,10 +177,7 @@ Func Capture_Window($hWnd, $w, $h, $sImageFilePath)
 	_GDIPlus_BitmapUnlockBits($hImageCropped, $tPixel)
 	_GDIPlus_ImageSaveToFile($hImageCropped, $sImageFilePath)
 	
-	;delete handles
-	_WinAPI_DeleteDC($hMemDC)
-	_WinAPI_ReleaseDC($hWnd, $hDC_Capture)
-	_WinAPI_DeleteObject($hBitmap)
+	;delete gdu plus handles
     _GDIPlus_ImageDispose($hImageCropped)
 	_GDIPlus_ImageDispose($hImage)
 	_GDIPlus_ImageDispose($hGraphics)
