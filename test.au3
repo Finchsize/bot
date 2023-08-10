@@ -31,57 +31,6 @@ While 1
 	Sleep(20 + Random(1, 10, 1))
 WEnd
 
-Func exit_get_window_handles()
-	ToolTip("")
-	$iContinueGetHandles = False
-EndFunc
-
-Func get_window_handles()
-	$iContinueGetHandles = True
-	While $iContinueGetHandles
-		AutoItSetOption("MouseCoordMode", 1)
-		$a_info = _Mouse_Win_GetInfo()
-		If @error Then Exit
-		AutoItSetOption("MouseCoordMode", 2)
-		Local $relativeMousePos = MouseGetPos()
-		$hWnd = $a_info[0]
-		$hWndControl = $a_info[1]
-		If ($iIsInBotCheck) Then
-			ConsoleWrite("Window hwnd = " & $a_info[0] & @CRLF & _
-			"Control hwnd = " & $a_info[1] & @CRLF & _
-			"Window Title = " & $a_info[2] & @CRLF & _
-			"Control Title = " & WinGetTitle($a_info[1]) & @CRLF & _
-			"Mouse X Pos global = " & $a_info[3] & @CRLF & _
-			"Mouse Y Pos global = " & $a_info[4] & @CRLF & _
-			"Mouse X Pos control = " & MouseGetPos()[0] & @CRLF & _
-			"Mouse X Pos control = " & MouseGetPos()[1])
-		EndIf
-		ToolTip("Window hwnd = " & $a_info[0] & @CRLF & _
-			"Control hwnd = " & $a_info[1] & @CRLF & _
-			"Window Title = " & $a_info[2] & @CRLF & _
-			"Control Title = " & WinGetTitle($a_info[1]) & @CRLF & _
-			"Mouse X Pos global = " & $a_info[3] & @CRLF & _
-			"Mouse Y Pos global = " & $a_info[4] & @CRLF & _
-			"Mouse X Pos control = " & MouseGetPos()[0] & @CRLF & _
-			"Mouse X Pos control = " & MouseGetPos()[1])
-		Sleep(500)
-	WEnd
-EndFunc
-
-Func _Mouse_Win_GetInfo()
-	Local $a_mpos = MouseGetPos()
-	If @error Then Return SetError(1, 0, 0)
-	Local $a_wfp = DllCall("user32.dll", "hwnd", "WindowFromPoint", "long", $a_mpos[0], "long", $a_mpos[1])
-	If @error Then Return SetError(2, 0, 0)
-	Local $a_ga = DllCall("user32.dll", "hwnd", "GetAncestor", "hwnd", $a_wfp[0], "int", 3); $GW_ROOTOWNER = 3
-	If @error Then Return SetError(3, 0, 0)
-	Local $a_ret[5] = [$a_ga[0], $a_wfp[0], WinGetTitle($a_ga[0]), $a_mpos[0], $a_mpos[1]]
-	;~ for debug
-	;~ ConsoleWrite("a_ga: " & _ArrayToString($a_ga) & @CRLF)
-	;~ ConsoleWrite("a_wfp: " & _ArrayToString($a_wfp) & @CRLF)
-	Return $a_ret
-EndFunc
-
 Func start_hunt()
 	Local $isGoingLeft = true;
 While 1
@@ -266,6 +215,57 @@ Func read_cords_from_text_file($ResultTextPath)
 	Else
 		ToolTip("Not found ", 0, 30, "Position not found" & StringLen($sOutput))
 	EndIf
+EndFunc
+
+Func exit_get_window_handles()
+	ToolTip("")
+	$iContinueGetHandles = False
+EndFunc
+
+Func get_window_handles()
+	$iContinueGetHandles = True
+	While $iContinueGetHandles
+		AutoItSetOption("MouseCoordMode", 1)
+		$a_info = mouse_Win_GetInfo()
+		If @error Then Exit
+		AutoItSetOption("MouseCoordMode", 2)
+		Local $relativeMousePos = MouseGetPos()
+		$hWnd = $a_info[0]
+		$hWndControl = $a_info[1]
+		If ($iIsInBotCheck) Then
+			ConsoleWrite("Window hwnd = " & $a_info[0] & @CRLF & _
+			"Control hwnd = " & $a_info[1] & @CRLF & _
+			"Window Title = " & $a_info[2] & @CRLF & _
+			"Control Title = " & WinGetTitle($a_info[1]) & @CRLF & _
+			"Mouse X Pos global = " & $a_info[3] & @CRLF & _
+			"Mouse Y Pos global = " & $a_info[4] & @CRLF & _
+			"Mouse X Pos control = " & MouseGetPos()[0] & @CRLF & _
+			"Mouse X Pos control = " & MouseGetPos()[1])
+		EndIf
+		ToolTip("Window hwnd = " & $a_info[0] & @CRLF & _
+			"Control hwnd = " & $a_info[1] & @CRLF & _
+			"Window Title = " & $a_info[2] & @CRLF & _
+			"Control Title = " & WinGetTitle($a_info[1]) & @CRLF & _
+			"Mouse X Pos global = " & $a_info[3] & @CRLF & _
+			"Mouse Y Pos global = " & $a_info[4] & @CRLF & _
+			"Mouse X Pos control = " & MouseGetPos()[0] & @CRLF & _
+			"Mouse X Pos control = " & MouseGetPos()[1])
+		Sleep(500)
+	WEnd
+EndFunc
+
+Func mouse_Win_GetInfo()
+	Local $a_mpos = MouseGetPos()
+	If @error Then Return SetError(1, 0, 0)
+	Local $a_wfp = DllCall("user32.dll", "hwnd", "WindowFromPoint", "long", $a_mpos[0], "long", $a_mpos[1])
+	If @error Then Return SetError(2, 0, 0)
+	Local $a_ga = DllCall("user32.dll", "hwnd", "GetAncestor", "hwnd", $a_wfp[0], "int", 3); $GW_ROOTOWNER = 3
+	If @error Then Return SetError(3, 0, 0)
+	Local $a_ret[5] = [$a_ga[0], $a_wfp[0], WinGetTitle($a_ga[0]), $a_mpos[0], $a_mpos[1]]
+	;~ for debug
+	;~ ConsoleWrite("a_ga: " & _ArrayToString($a_ga) & @CRLF)
+	;~ ConsoleWrite("a_wfp: " & _ArrayToString($a_wfp) & @CRLF)
+	Return $a_ret
 EndFunc
 
 Func exit_bot()
