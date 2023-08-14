@@ -36,21 +36,31 @@ $iClickCounter = 0
 $iCenterPosX_global = 3857
 $iCenterPosY_global = 689
 
-; tc ptaszory
-Local $leftTop[2] = [411, 713]
-Local $rightTop[2] = [466, 673]
-Local $leftBottom[2] = [652, 634]
-Local $rightBottom[2] = [796, 497]
+; tc robins
+;~ Local $leftTop[2] = [411, 713]
+;~ Local $rightTop[2] = [524, 675]
+;~ Local $leftBottom[2] = [451, 791]
+;~ Local $rightBottom[2] = [616, 762]
+
+; ape
+Local $leftTop[2] = [610, 669]
+Local $rightTop[2] = [693, 561]
+Local $leftBottom[2] = [618, 754]
+Local $rightBottom[2] = [803, 621]
+
+Local $pointsToGo[4] = [$leftTop, $rightBottom, $rightTop, $leftBottom]
 
 While 1
 	Sleep(20 + Random(1, 10, 1))
 WEnd
 
 Func start_hunt()
-	Local $goToPoint = 1; 1-left bottom, 2-right bottom, 3-left top, 4-right top
+	Local $goToPoint = 0
 	Local $iArraySize = 15;
 	Local $iArrayIterator = 0;
 	Local $iLastSleep[$iArraySize]
+	Local $preferXJump = True;
+	Local $JumpOccured = False
 While 1
 	update_cords()
 	Local $currentSleep = Random(5, 20, 1) * 20
@@ -61,27 +71,33 @@ While 1
 	$iLastSleep[$iArrayIterator] = $currentSleep
 	$iArrayIterator = Mod($iArrayIterator + 1, $iArraySize)
 
-	Sleep(1350 + $currentSleep)
 	Local $begin = TimerInit()
 	If $currentXpos == 051 And $currentYpos == 051 Then
 		$iIsInBotCheck = True
 		ExitLoop
 	EndIf
 
-	If($goToPoint == 1) Then
-		If ($currentXpos - 16 > $leftTop[0] ) Then
-			jump_x_up($currentSleep)
-		ElseIf ($currentXpos + 16 < $leftTop[0] ) Then
-			jump_x_down($currentSleep)
-		ElseIf ($currentYpos - 16 > $leftTop[1]) Then
-			jump_y_up($currentSleep)
-		ElseIf ($currentYpos + 16 < $leftTop[1]) Then
-			jump_y_down($currentSleep)
-		Else
-			$goToPoint = Mod($goToPoint +1 , 4)
-		EndIf
+	If ($currentXpos - 16 > ($pointsToGo[$goToPoint])[0] And $preferXJump) Then
+		jump_x_up($currentSleep)
+		$YJumpOccured = True
+	ElseIf ($currentXpos + 16 < ($pointsToGo[$goToPoint])[0] And $preferXJump) Then
+		jump_x_down($currentSleep)
+		$YJumpOccured = True
+	ElseIf ($currentYpos - 16 > ($pointsToGo[$goToPoint])[1]) Then
+		jump_y_up($currentSleep)
+		$JumpOccured = True
+	ElseIf ($currentYpos + 16 < ($pointsToGo[$goToPoint])[1]) Then
+		jump_y_down($currentSleep)
+		$YJumpOccured = True
+	ElseIf(Not $JumpOccured And $preferXJump) Then
+		$goToPoint = Mod($goToPoint + 1 , 4)
 	EndIf
-
+	$preferXJump = Not $preferXJump
+	$JumpOccured = False;
+	ConsoleWrite("Going to points: " & $goToPoint & @CRLF)
+	Sleep(Mod($currentSleep, 10))
+	random_scatter()
+	Sleep(1350 + $currentSleep)
 	;debug
 	;ConsoleWrite("Last sleep array: " & _ArrayToString($iLastSleep) & " Current sleep: " & $currentSleep & @CRLF)
 	;ConsoleWrite("Hunt one cycle execution time (without wait): " & TimerDiff($begin) & @CRLF);
@@ -90,22 +106,22 @@ EndFunc
 
 ; -16 on y cord
 Func jump_y_up($currentSleep)
-	jump($iCenterPosX + 480, $iCenterPosY - 270, $currentSleep)
+	jump($iCenterPosX + 480 + Random(-60,0,1), $iCenterPosY - 270 + Random(0,60,1), $currentSleep)
 EndFunc
 
 ; +16 on y cord
 Func jump_y_down($currentSleep)
-	jump($iCenterPosX - 480, $iCenterPosY + 270, $currentSleep)
+	jump($iCenterPosX - 480 + Random(0,60,1), $iCenterPosY + 270 + Random(-60,0,1), $currentSleep)
 EndFunc
 
 ; -16 on x cord
 Func jump_x_up($currentSleep)
-	jump($iCenterPosX - 480, $iCenterPosY - 270, $currentSleep)
+	jump($iCenterPosX - 480 + Random(0,60,1), $iCenterPosY - 270 + Random(0,60,1), $currentSleep)
 EndFunc
 
 ; +16 on x cord
 Func jump_x_down($currentSleep)
-	jump($iCenterPosX + 480, $iCenterPosY + 270, $currentSleep)
+	jump($iCenterPosX + 480 + Random(-60,0,1), $iCenterPosY + 270 + Random(-60,0,1), $currentSleep)
 EndFunc
 
 Func random_jump($currentSleep)
@@ -113,7 +129,7 @@ Func random_jump($currentSleep)
 EndFunc
 
 Func random_scatter()
-	scatter(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1))
+	scatter($iCenterPosX + Random(-50, 50, 1), $iCenterPosY + Random(-50, 50, 1))
 EndFunc
 
 Func jump_right($currentSleep)
@@ -205,7 +221,7 @@ Func Capture_Window($hWnd, $w, $h, $sImageFilePath)
 	Local $hMemDC = _WinAPI_CreateCompatibleDC($hDC_Capture)
 	Local $hBitmap = _WinAPI_CreateCompatibleBitmap($hDC_Capture, $w, $h)
 	_WinAPI_SelectObject($hMemDC, $hBitmap)
-	_WinAPI_PrintWindow($hWnd, $hMemDC, True)
+	_WinAPI_PrintWindow($hWnd, $hMemDC, False)
 	$afterWinApi = TimerInit()
 	;copy to gdi plus
 	_GDIPlus_Startup()
@@ -260,8 +276,8 @@ Func Capture_Window($hWnd, $w, $h, $sImageFilePath)
 	read_cords_from_text_file($ResultTextPath)
 	run_tesseract($ResultTextPath)
 	;for debug
-	ConsoleWrite("Function Capture_Window execution time: " & TimerDiff($begin) & @CRLF);
-	ConsoleWrite("Function Capture_Window execution time: " & TimerDiff($afterWinApi) & @CRLF);
+	;ConsoleWrite("Function Capture_Window execution time: " & TimerDiff($begin) & @CRLF);
+	;ConsoleWrite("Function Capture_Window execution time: " & TimerDiff($afterWinApi) & @CRLF);
 	
 EndFunc 
 
@@ -286,8 +302,8 @@ Func read_cords_from_text_file($ResultTextPath)
 		$currentYpos = StringRight($sOutputClean, 3)
 		;for debugging position processing
 		;ToolTip("Position x: " & $currentXpos  & @CRLF & "Position y: " & $currentYpos, 0, 30, "Raw position in game: " & $sOutput)
-	Else
-		ToolTip("Not found ", 0, 30, "Position not found" & StringLen($sOutput))
+	;~ Else
+		;~ ToolTip("Not found ", 0, 30, "Position not found" & StringLen($sOutput))
 	EndIf
 EndFunc
 
