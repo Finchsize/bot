@@ -10,12 +10,14 @@
 #include <GUIConstantsEx.au3>
 #include <WinAPISysWin.au3>
 #include <WinAPISys.au3>
+#include <Misc.au3>
 
 HotKeySet("^t", "start_hunt")
 HotKeySet("^q", "exit_bot")
 HotKeySet("^m", "get_cords_in_loop")
 HotKeySet("^i", "get_window_handles")
 HotKeySet("!i", "exit_get_window_handles")
+HotKeySet("^p", "obtain_move_points")
 
 Global $iContinueGetHandles = True
 Global $iIsInBotCheck = False
@@ -94,7 +96,7 @@ While 1
 	EndIf
 	$preferXJump = Not $preferXJump
 	$JumpOccured = False;
-	ConsoleWrite("Going to points: " & $goToPoint & @CRLF)
+	ConsoleWrite("Going to point: " & $goToPoint & @CRLF)
 	Sleep(Mod($currentSleep, 10))
 	random_scatter()
 	Sleep(1350 + $currentSleep)
@@ -132,26 +134,25 @@ Func random_scatter()
 	scatter($iCenterPosX + Random(-50, 50, 1), $iCenterPosY + Random(-50, 50, 1))
 EndFunc
 
+; +8 on x; -8 on y
 Func jump_right($currentSleep)
-	jump($iCenterPosX + 480 - Random(40,100,1), $iCenterPosY - Random(-20,20,1), $currentSleep)
-	;jump(1440 - Random(0,20,1), 540 - Random(0,20,1), $currentSleep)
+	jump(1440, 540, $currentSleep)
 EndFunc
-
+; -7 on x; +8/+7 on y
 Func jump_left($currentSleep)
-	jump($iCenterPosX - 480 + Random(40,100,1), $iCenterPosY - Random(-20,20,1), $currentSleep)
-	;jump(480 + Random(0,20,1), 540 - Random(0,20,1), $currentSleep)
+	jump(480, 540, $currentSleep)
+EndFunc
+; -8 on x; -8 on y
+Func jump_up($currentSleep)
+	jump(960, 270, $currentSleep)
+EndFunc
+; +8 on x; +8 on y
+Func jump_down($currentSleep)
+	jump(960, 810, $currentSleep)
 EndFunc
 
-Func jump_up()
-	;~ jump(960, 270)
-EndFunc
-
-Func jump_down()
-	;~ jump(960, 810)
-EndFunc
-
-Func jump_center()
-	;~ jump(960, 540)
+Func jump_center($currentSleep)
+	jump(960, 540, $currentSleep)
 EndFunc
 
 Func jump($xCordClick, $yCordClick, $currentSleep)
@@ -361,4 +362,36 @@ EndFunc
 
 Func exit_bot()
 	Exit
+EndFunc
+
+Func obtain_move_points()
+	Local $qKeyPressed = "51"
+	Local $enterButtonPressed = "0D"
+	Local $currentPoint = 0
+	Local $redrawTooltip = 0
+	Do
+		Capture_Window($hWnd, 292, 20, $sImageFilePath)
+		If(Mod($redrawTooltip, 10) == 0) Then
+			ToolTip("Press Enter to set a travel point: " & $currentPoint + 1 & @CRLF & _
+					"Press Q to finish")
+		EndIf
+
+		If(_IsPressed($enterButtonPressed)) Then
+			ReDim $pointsToGo[$currentPoint + 1]
+			Local $newPoint = [$currentXpos, $currentXpos]
+			$pointsToGo[$currentPoint] = $newPoint
+			ConsoleWrite("Set point: " & $currentPoint + 1 & " at: " & _ArrayToString($pointsToGo[$currentPoint]) & @CRLF)
+			$currentPoint += 1
+			While _IsPressed($enterButtonPressed)
+				Sleep(10)
+			WEnd
+		EndIf
+		Sleep(10)
+		$redrawTooltip += 1
+	Until _IsPressed($qKeyPressed)
+	ToolTip("")
+EndFunc
+
+Func anty_bot_click()
+
 EndFunc
