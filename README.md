@@ -8,25 +8,23 @@ Info:
 ```
 
 - jumping fast = disconnect
-- jumping to exactly the same spots = ban in jail
-
-- This random jump put acc into bot jail: 
-@Edit - spamming any action in short period of time put character to jail
-@Edit - jumping very slow in random period of times with randomized location also puts character to jail
-
+- This is sending to jail:
 ```
-Func random_jump()
-	While 1
-		Sleep(650 + Random(0, 50, 1))
-		Local $begin = TimerInit()
-		jump(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1))
-		update_cords()
-		;random scatter
-		scatter(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1))
-		ConsoleWrite("One random jump execution time: " & TimerDiff($begin) & @CRLF);
-		;ConsoleWrite("Random jump executed!" & @CRLF)
-	WEnd
-EndFunc
+	Local $wParam = 0x0008
+	_SendMessage($hWndControl, $WM_LBUTTONDOWN, $wParam, $lParam)
+	_SendMessage($hWndControl, $WM_LBUTTONUP, $wParam, $lParam)
+```
+And this:
+```
+	Local $MK_LBUTTON = 0x0001
+	Local $lParam = _WinAPI_MakeLong($xCordClick, $yCordClick)
+	_WinAPI_PostMessage($hWndControl, $WM_LBUTTONDOWN, $MK_LBUTTON, $lParam)
+	Sleep($currentSleep)
+	_WinAPI_PostMessage($hWndControl, $WM_LBUTTONUP, 0, $lParam)
+```
+And this:
+```
+	ControlClick($hWnd, "", $hWndControl, "left", 1, $xCordClick, $yCordClick)
 ```
 
 

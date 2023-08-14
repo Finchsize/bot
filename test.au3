@@ -8,6 +8,8 @@
 #include <WinAPIFiles.au3>
 #include <Array.au3>
 #include <GUIConstantsEx.au3>
+#include <WinAPISysWin.au3>
+#include <WinAPISys.au3>
 
 HotKeySet("^t", "start_hunt")
 HotKeySet("^q", "exit_bot")
@@ -24,84 +26,154 @@ $currentXpos = 0;
 $currentYpos = 0;
 $sImageFileExtenstion = ".tiff";
 $sImageFilePath = @ScriptDir & "\temp\cords" & $sImageFileExtenstion
+; hControlPositions
+$iCenterPosX = 960
+$iCenterPosY = 540
+
+$iClickCounter = 0
+
+; current global
+$iCenterPosX_global = 3857
+$iCenterPosY_global = 689
+
+; tc ptaszory
+Local $leftTop[2] = [411, 713]
+Local $rightTop[2] = [466, 673]
+Local $leftBottom[2] = [652, 634]
+Local $rightBottom[2] = [796, 497]
 
 While 1
 	Sleep(20 + Random(1, 10, 1))
 WEnd
 
 Func start_hunt()
-	Local $isGoingLeft = true;
+	Local $goToPoint = 1; 1-left bottom, 2-right bottom, 3-left top, 4-right top
+	Local $iArraySize = 15;
+	Local $iArrayIterator = 0;
+	Local $iLastSleep[$iArraySize]
 While 1
-	Sleep(750 + Random(0, 300, 1))
+	update_cords()
+	Local $currentSleep = Random(5, 20, 1) * 20
+	While _ArraySearch($iLastSleep, $currentSleep) <> -1
+		$currentSleep = Random(5, 20, 1) * 20
+		;ConsoleWrite("Rolled sleep: " & $currentSleep & @CRLF)
+	WEnd
+	$iLastSleep[$iArrayIterator] = $currentSleep
+	$iArrayIterator = Mod($iArrayIterator + 1, $iArraySize)
+
+	Sleep(1350 + $currentSleep)
 	Local $begin = TimerInit()
 	If $currentXpos == 051 And $currentYpos == 051 Then
 		$iIsInBotCheck = True
 		ExitLoop
 	EndIf
-	;~ update_cords()
 
-	;~ If Random(1, 3, 1) == 3 Then
-		random_jump()
-		Sleep(400 + Random(0, 100, 1))
-		random_scatter()
-		;~ ContinueLoop
-	;~ EndIf
-
-	#cs Ape city go left and right in line
-	If($isGoingLeft) Then
-		jump_left()
-	Else
-		jump_right()
+	If($goToPoint == 1) Then
+		If ($currentXpos - 16 > $leftTop[0] ) Then
+			jump_x_up($currentSleep)
+		ElseIf ($currentXpos + 16 < $leftTop[0] ) Then
+			jump_x_down($currentSleep)
+		ElseIf ($currentYpos - 16 > $leftTop[1]) Then
+			jump_y_up($currentSleep)
+		ElseIf ($currentYpos + 16 < $leftTop[1]) Then
+			jump_y_down($currentSleep)
+		Else
+			$goToPoint = Mod($goToPoint +1 , 4)
+		EndIf
 	EndIf
 
-	If $currentXpos > 900 AND $currentYpos > 550 Then
-		$isGoingLeft = True
-	EndIf
-	ConsoleWrite("isGoingLeftLeft: " & $isGoingLeft & @CRLF)
-
-	If $currentXpos < 630 And $currentYpos > 840 Then
-		$isGoingLeft = False
-	EndIf
-	ConsoleWrite("isGoingLeftLeft: " & $isGoingLeft & @CRLF)		
-	#ce
-	ConsoleWrite("Hunt one cycle execution time (without wait): " & TimerDiff($begin) & @CRLF);
+	;debug
+	;ConsoleWrite("Last sleep array: " & _ArrayToString($iLastSleep) & " Current sleep: " & $currentSleep & @CRLF)
+	;ConsoleWrite("Hunt one cycle execution time (without wait): " & TimerDiff($begin) & @CRLF);
 WEnd
 EndFunc
 
-Func random_jump()
-	jump(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1))
+; -16 on y cord
+Func jump_y_up($currentSleep)
+	jump($iCenterPosX + 480, $iCenterPosY - 270, $currentSleep)
+EndFunc
+
+; +16 on y cord
+Func jump_y_down($currentSleep)
+	jump($iCenterPosX - 480, $iCenterPosY + 270, $currentSleep)
+EndFunc
+
+; -16 on x cord
+Func jump_x_up($currentSleep)
+	jump($iCenterPosX - 480, $iCenterPosY - 270, $currentSleep)
+EndFunc
+
+; +16 on x cord
+Func jump_x_down($currentSleep)
+	jump($iCenterPosX + 480, $iCenterPosY + 270, $currentSleep)
+EndFunc
+
+Func random_jump($currentSleep)
+	jump(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1), $currentSleep)
 EndFunc
 
 Func random_scatter()
 	scatter(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1))
 EndFunc
 
-Func jump_right()
-	jump(1440, 540)
+Func jump_right($currentSleep)
+	jump($iCenterPosX + 480 - Random(40,100,1), $iCenterPosY - Random(-20,20,1), $currentSleep)
+	;jump(1440 - Random(0,20,1), 540 - Random(0,20,1), $currentSleep)
 EndFunc
 
-Func jump_left()
-	jump(480, 540)
+Func jump_left($currentSleep)
+	jump($iCenterPosX - 480 + Random(40,100,1), $iCenterPosY - Random(-20,20,1), $currentSleep)
+	;jump(480 + Random(0,20,1), 540 - Random(0,20,1), $currentSleep)
 EndFunc
 
 Func jump_up()
-	jump(960, 270)
+	;~ jump(960, 270)
 EndFunc
 
 Func jump_down()
-	jump(960, 810)
+	;~ jump(960, 810)
 EndFunc
 
 Func jump_center()
-	jump(960, 540)
+	;~ jump(960, 540)
 EndFunc
 
-Func jump($xCordClick, $yCordClick)
-	Local $wParam = 0x0008 ; hold ctrl
+Func jump($xCordClick, $yCordClick, $currentSleep)
+	$iClickCounter = $iClickCounter + 1
+	Sleep($currentSleep)
+	;debug
+	ConsoleWrite("Cunter: " & $iClickCounter & @CRLF)
+	$currentClickCountCycle = Mod($iClickCounter, 100)
+	If($currentClickCountCycle > 96 ) Then
+		ToolTip("Mouse will be taken in: " & 100 - $currentClickCountCycle)
+	EndIf
+
+	; anty bot jail protection - one real click after 99 jumps
+	If $currentClickCountCycle == 0 Then
+		ToolTip("Mouse will be taken in: 0")
+		Local $currentMousePos = MouseGetPos()
+		Sleep(20)
+		WinSetOnTop($hWnd, "", $WINDOWS_ONTOP)
+		MouseClick($MOUSE_CLICK_LEFT, 3857 + 50 , 689 + 50)
+		ConsoleWrite("REAL CLICK AT: " & $iClickCounter & @CRLF)
+		WinSetOnTop($hWnd, "", $WINDOWS_NOONTOP)
+		MouseMove($currentMousePos[0], $currentMousePos[1] ,0)
+		ToolTip("")
+		Return
+	EndIf
+	
+	Local $MK_CONTROL = 0x0008
+	Local $MK_LBUTTON = 0x0001
 	Local $lParam = _WinAPI_MakeLong($xCordClick, $yCordClick)
-	_SendMessage($hWndControl, $WM_LBUTTONDOWN, $wParam, $lParam)
-	_SendMessage($hWndControl, $WM_LBUTTONUP, $wParam, $lParam)
-	;~ ControlClick($hWnd, "", $hWndControl, "left", 1, $xCordClick, $yCordClick)
+	
+	_WinAPI_PostMessage($hWndControl, $WM_LBUTTONDOWN, $MK_CONTROL, $lParam)
+	Sleep($currentSleep)
+	$lParam = _WinAPI_MakeLong($currentSleep - 50, $currentSleep - 100)
+	_WinAPI_PostMessage($hWndControl, $WM_LBUTTONUP, $MK_CONTROL, $lParam)
+
+	; no bot ban
+	;MouseClick($MOUSE_CLICK_LEFT, $xCordClick, $yCordClick)
+
 EndFunc
 
 Func scatter($xCordClick, $yCordClick)
@@ -118,6 +190,7 @@ EndFunc
 Func get_cords_in_loop()
 	While 1
 		Capture_Window($hWnd, 292, 20, $sImageFilePath)
+		ToolTip("X: " & $currentXpos & " Y: " & $currentYpos)
 		Sleep(500)
 	WEnd
 EndFunc
@@ -212,13 +285,14 @@ Func read_cords_from_text_file($ResultTextPath)
 		$currentXpos = StringLeft($sOutputClean, 3)
 		$currentYpos = StringRight($sOutputClean, 3)
 		;for debugging position processing
-		ToolTip("Position x: " & $currentXpos  & @CRLF & "Position y: " & $currentYpos, 0, 30, "Raw position in game: " & $sOutput)
+		;ToolTip("Position x: " & $currentXpos  & @CRLF & "Position y: " & $currentYpos, 0, 30, "Raw position in game: " & $sOutput)
 	Else
 		ToolTip("Not found ", 0, 30, "Position not found" & StringLen($sOutput))
 	EndIf
 EndFunc
 
 Func exit_get_window_handles()
+	AutoItSetOption("MouseCoordMode", 1)
 	ToolTip("")
 	$iContinueGetHandles = False
 EndFunc
@@ -241,7 +315,7 @@ Func get_window_handles()
 			"Mouse X Pos global = " & $a_info[3] & @CRLF & _
 			"Mouse Y Pos global = " & $a_info[4] & @CRLF & _
 			"Mouse X Pos control = " & MouseGetPos()[0] & @CRLF & _
-			"Mouse X Pos control = " & MouseGetPos()[1])
+			"Mouse Y Pos control = " & MouseGetPos()[1])
 		EndIf
 		ToolTip("Window hwnd = " & $a_info[0] & @CRLF & _
 			"Control hwnd = " & $a_info[1] & @CRLF & _
@@ -250,7 +324,7 @@ Func get_window_handles()
 			"Mouse X Pos global = " & $a_info[3] & @CRLF & _
 			"Mouse Y Pos global = " & $a_info[4] & @CRLF & _
 			"Mouse X Pos control = " & MouseGetPos()[0] & @CRLF & _
-			"Mouse X Pos control = " & MouseGetPos()[1])
+			"Mouse Y Pos control = " & MouseGetPos()[1])
 		Sleep(500)
 	WEnd
 EndFunc
