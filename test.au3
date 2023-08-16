@@ -79,31 +79,81 @@ While 1
 		ExitLoop
 	EndIf
 
-	If ($currentXpos - 16 > ($pointsToGo[$goToPoint])[0] And $preferXJump) Then
-		jump_x_up($currentSleep)
-		$YJumpOccured = True
-	ElseIf ($currentXpos + 16 < ($pointsToGo[$goToPoint])[0] And $preferXJump) Then
-		jump_x_down($currentSleep)
-		$YJumpOccured = True
-	ElseIf ($currentYpos - 16 > ($pointsToGo[$goToPoint])[1]) Then
-		jump_y_up($currentSleep)
-		$JumpOccured = True
-	ElseIf ($currentYpos + 16 < ($pointsToGo[$goToPoint])[1]) Then
-		jump_y_down($currentSleep)
-		$YJumpOccured = True
-	ElseIf(Not $JumpOccured And $preferXJump) Then
-		$goToPoint = Mod($goToPoint + 1 , 4)
+	Local $goToPointX = ($pointsToGo[$goToPoint])[0]
+	Local $goToPointY = ($pointsToGo[$goToPoint])[1]
+
+	If($currentXpos - 8 > $goToPointX And $currentYpos - 8 > $goToPointY) Then
+		jump_up($currentSleep)
+	ElseIf($currentXpos + 8 < $goToPointX And $currentYpos + 8 < $goToPointY) Then
+		jump_down($currentSleep)
+		Sleep(Mod($currentSleep, 10))
+		scatter_down()
+	Else
+		$goToPoint = Mod($goToPoint + 1 , 2)
 	EndIf
+
+
+
+
+	;~ ; jump straight
+	;~ If ($currentXpos - 8 > ($pointsToGo[$goToPoint])[0] And $currentYpos - 8 > ($pointsToGo[$goToPoint])[1]) Then
+	;~ 	jump_up($currentSleep)
+	;~ ElseIf($currentXpos + 8 < ($pointsToGo[$goToPoint])[0] And $currentYpos + 8 > ($pointsToGo[$goToPoint])[1]) Then
+	;~ 	jump_down($currentSleep)
+	;~ ElseIf($currentXpos + 8 < ($pointsToGo[$goToPoint])[0] And $currentYpos - 8 < ($pointsToGo[$goToPoint])[1]) Then
+	;~ 	jump_left($currentSleep)
+	;~ ElseIf($currentXpos - 8 < ($pointsToGo[$goToPoint])[0] And $currentYpos + 8 < ($pointsToGo[$goToPoint])[1]) Then
+	;~ 	jump_right($currentSleep)
+	;~ Else
+	;~ 	; jump on diagonals
+	;~ 	If ($currentXpos - 16 > ($pointsToGo[$goToPoint])[0] And $preferXJump) Then
+	;~ 		jump_x_up($currentSleep)
+	;~ 		$JumpOccured = True
+	;~ 	ElseIf ($currentXpos + 16 < ($pointsToGo[$goToPoint])[0] And $preferXJump) Then
+	;~ 		jump_x_down($currentSleep)
+	;~ 		$JumpOccured = True
+	;~ 	ElseIf ($currentYpos - 16 > ($pointsToGo[$goToPoint])[1]) Then
+	;~ 		jump_y_up($currentSleep)
+	;~ 		$JumpOccured = True
+	;~ 	ElseIf ($currentYpos + 16 < ($pointsToGo[$goToPoint])[1]) Then
+	;~ 		jump_y_down($currentSleep)
+	;~ 		$JumpOccured = True
+	;~ 	ElseIf(Not $JumpOccured And $preferXJump) Then
+	;~ 		$goToPoint = Mod($goToPoint + 1 , 4)
+	;~ 	EndIf
+	;~ EndIf
+
+
 	$preferXJump = Not $preferXJump
 	$JumpOccured = False;
-	ConsoleWrite("Going to point: " & $goToPoint & @CRLF)
-	Sleep(Mod($currentSleep, 10))
-	random_scatter()
+	ConsoleWrite("Going to point: " & $goToPoint & " Cord X: " & ($pointsToGo[$goToPoint])[0] & " Cord Y: " & ($pointsToGo[$goToPoint])[1] & @CRLF)
 	Sleep(1350 + $currentSleep)
 	;debug
 	;ConsoleWrite("Last sleep array: " & _ArrayToString($iLastSleep) & " Current sleep: " & $currentSleep & @CRLF)
 	;ConsoleWrite("Hunt one cycle execution time (without wait): " & TimerDiff($begin) & @CRLF);
 WEnd
+EndFunc
+
+; -8 on x; -8 on y
+Func jump_up($currentSleep)
+	jump(960, 270, $currentSleep)
+EndFunc
+; +8 on x; +8 on y
+Func jump_down($currentSleep)
+	jump(960, 810, $currentSleep)
+EndFunc
+; -7 on x; +8/+7 on y
+Func jump_left($currentSleep)
+	jump(480, 540, $currentSleep)
+EndFunc
+; +8 on x; -8 on y
+Func jump_right($currentSleep)
+	jump(1440, 540, $currentSleep)
+EndFunc
+
+
+Func jump_center($currentSleep)
+	jump(960, 540, $currentSleep)
 EndFunc
 
 ; -16 on y cord
@@ -130,36 +180,23 @@ Func random_jump($currentSleep)
 	jump(960 + Random(-562, 562, 1), 540 + Random(-260, 260, 1), $currentSleep)
 EndFunc
 
+Func scatter_up()
+	scatter($iCenterPosX - Random(10, 50, 1), $iCenterPosY - Random(10, 50, 1))
+EndFunc
+
+Func scatter_down()
+	scatter($iCenterPosX + Random(10, 50, 1), $iCenterPosY + Random(10, 50, 1))
+EndFunc
+
 Func random_scatter()
 	scatter($iCenterPosX + Random(-50, 50, 1), $iCenterPosY + Random(-50, 50, 1))
-EndFunc
-
-; +8 on x; -8 on y
-Func jump_right($currentSleep)
-	jump(1440, 540, $currentSleep)
-EndFunc
-; -7 on x; +8/+7 on y
-Func jump_left($currentSleep)
-	jump(480, 540, $currentSleep)
-EndFunc
-; -8 on x; -8 on y
-Func jump_up($currentSleep)
-	jump(960, 270, $currentSleep)
-EndFunc
-; +8 on x; +8 on y
-Func jump_down($currentSleep)
-	jump(960, 810, $currentSleep)
-EndFunc
-
-Func jump_center($currentSleep)
-	jump(960, 540, $currentSleep)
 EndFunc
 
 Func jump($xCordClick, $yCordClick, $currentSleep)
 	$iClickCounter = $iClickCounter + 1
 	Sleep($currentSleep)
 	;debug
-	ConsoleWrite("Cunter: " & $iClickCounter & @CRLF)
+	;~ ConsoleWrite("Cunter: " & $iClickCounter & @CRLF)
 	$currentClickCountCycle = Mod($iClickCounter, 100)
 	If($currentClickCountCycle > 96 ) Then
 		ToolTip("Mouse will be taken in: " & 100 - $currentClickCountCycle)
