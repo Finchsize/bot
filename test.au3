@@ -58,11 +58,9 @@ WEnd
 
 Func start_hunt()
 	Local $goToPoint = 0
-	Local $iArraySize = 15;
-	Local $iArrayIterator = 0;
-	Local $iLastSleep[$iArraySize]
-	Local $preferXJump = True;
-	Local $JumpOccured = False
+	Local $iSleepArraySize = 15;
+	Local $iSleepArrayIterator = 0;
+	Local $iLastSleep[$iSleepArraySize]
 While 1
 	update_cords()
 	Local $currentSleep = Random(5, 20, 1) * 20
@@ -70,8 +68,8 @@ While 1
 		$currentSleep = Random(5, 20, 1) * 20
 		;ConsoleWrite("Rolled sleep: " & $currentSleep & @CRLF)
 	WEnd
-	$iLastSleep[$iArrayIterator] = $currentSleep
-	$iArrayIterator = Mod($iArrayIterator + 1, $iArraySize)
+	$iLastSleep[$iSleepArrayIterator] = $currentSleep
+	$iSleepArrayIterator = Mod($iSleepArrayIterator + 1, $iSleepArraySize)
 
 	Local $begin = TimerInit()
 	If $currentXpos == 051 And $currentYpos == 051 Then
@@ -82,65 +80,45 @@ While 1
 	Local $goToPointX = ($pointsToGo[$goToPoint])[0]
 	Local $goToPointY = ($pointsToGo[$goToPoint])[1]
 
-	If($currentXpos - 8 > $goToPointX And $currentYpos - 8 > $goToPointY) Then
-		jump_up($currentSleep)
-	ElseIf($currentXpos + 8 < $goToPointX And $currentYpos + 8 < $goToPointY) Then
-		jump_down($currentSleep)
+	; go up/down in line
+	;~ If($currentXpos - 8 > $goToPointX And $currentYpos - 8 > $goToPointY) Then
+	;~ 	jump_up($currentSleep)
+	;~ 	Sleep(Mod($currentSleep, 10))
+	;~ 	scatter_up()
+	;~ ElseIf($currentXpos + 8 < $goToPointX And $currentYpos + 8 < $goToPointY) Then
+	;~ 	jump_down($currentSleep)
+	;~ 	Sleep(Mod($currentSleep, 10))
+	;~ 	scatter_down()
+	;~ Else
+	;~ 	$goToPoint = Mod($goToPoint + 1 , 2)
+	;~ EndIf
+
+	;go left/right in line
+	If($currentXpos - 8 > $goToPointX And $currentYpos + 8 > $goToPointY) Then
+		jump_left($currentSleep)
 		Sleep(Mod($currentSleep, 10))
-		scatter_down()
+		scatter_left()
+	ElseIf($currentXpos + 8 < $goToPointX And $currentYpos - 8 > $goToPointY) Then
+		jump_right($currentSleep)
+		Sleep(Mod($currentSleep, 10))
+		scatter_right()
 	Else
 		$goToPoint = Mod($goToPoint + 1 , 2)
 	EndIf
 
 
-
-
-	;~ ; jump straight
-	;~ If ($currentXpos - 8 > ($pointsToGo[$goToPoint])[0] And $currentYpos - 8 > ($pointsToGo[$goToPoint])[1]) Then
-	;~ 	jump_up($currentSleep)
-	;~ ElseIf($currentXpos + 8 < ($pointsToGo[$goToPoint])[0] And $currentYpos + 8 > ($pointsToGo[$goToPoint])[1]) Then
-	;~ 	jump_down($currentSleep)
-	;~ ElseIf($currentXpos + 8 < ($pointsToGo[$goToPoint])[0] And $currentYpos - 8 < ($pointsToGo[$goToPoint])[1]) Then
-	;~ 	jump_left($currentSleep)
-	;~ ElseIf($currentXpos - 8 < ($pointsToGo[$goToPoint])[0] And $currentYpos + 8 < ($pointsToGo[$goToPoint])[1]) Then
-	;~ 	jump_right($currentSleep)
-	;~ Else
-	;~ 	; jump on diagonals
-	;~ 	If ($currentXpos - 16 > ($pointsToGo[$goToPoint])[0] And $preferXJump) Then
-	;~ 		jump_x_up($currentSleep)
-	;~ 		$JumpOccured = True
-	;~ 	ElseIf ($currentXpos + 16 < ($pointsToGo[$goToPoint])[0] And $preferXJump) Then
-	;~ 		jump_x_down($currentSleep)
-	;~ 		$JumpOccured = True
-	;~ 	ElseIf ($currentYpos - 16 > ($pointsToGo[$goToPoint])[1]) Then
-	;~ 		jump_y_up($currentSleep)
-	;~ 		$JumpOccured = True
-	;~ 	ElseIf ($currentYpos + 16 < ($pointsToGo[$goToPoint])[1]) Then
-	;~ 		jump_y_down($currentSleep)
-	;~ 		$JumpOccured = True
-	;~ 	ElseIf(Not $JumpOccured And $preferXJump) Then
-	;~ 		$goToPoint = Mod($goToPoint + 1 , 4)
-	;~ 	EndIf
-	;~ EndIf
-
-
-	$preferXJump = Not $preferXJump
-	$JumpOccured = False;
-	ConsoleWrite("Going to point: " & $goToPoint & " Cord X: " & ($pointsToGo[$goToPoint])[0] & " Cord Y: " & ($pointsToGo[$goToPoint])[1] & @CRLF)
+	ConsoleWrite("Going to point: " & $goToPoint & " Cord X: " & $goToPointX & " Cord Y: " & $goToPointY & @CRLF)
 	Sleep(1350 + $currentSleep)
-	;debug
-	;ConsoleWrite("Last sleep array: " & _ArrayToString($iLastSleep) & " Current sleep: " & $currentSleep & @CRLF)
-	;ConsoleWrite("Hunt one cycle execution time (without wait): " & TimerDiff($begin) & @CRLF);
 WEnd
 EndFunc
 
 ; -8 on x; -8 on y
 Func jump_up($currentSleep)
-	jump(960, 270, $currentSleep)
+	jump(960 + Random(-30,30,1), 270 + Random(-30,30,1), $currentSleep)
 EndFunc
 ; +8 on x; +8 on y
 Func jump_down($currentSleep)
-	jump(960, 810, $currentSleep)
+	jump(960 + Random(-30,30,1), 810 + Random(-30,30,1), $currentSleep)
 EndFunc
 ; -7 on x; +8/+7 on y
 Func jump_left($currentSleep)
@@ -150,7 +128,6 @@ EndFunc
 Func jump_right($currentSleep)
 	jump(1440, 540, $currentSleep)
 EndFunc
-
 
 Func jump_center($currentSleep)
 	jump(960, 540, $currentSleep)
@@ -181,11 +158,19 @@ Func random_jump($currentSleep)
 EndFunc
 
 Func scatter_up()
-	scatter($iCenterPosX - Random(10, 50, 1), $iCenterPosY - Random(10, 50, 1))
+	scatter(960, 270)
 EndFunc
 
 Func scatter_down()
-	scatter($iCenterPosX + Random(10, 50, 1), $iCenterPosY + Random(10, 50, 1))
+	scatter(960, 810)
+EndFunc
+
+Func scatter_left()
+	scatter(480, 540)
+EndFunc
+
+Func scatter_right()
+	scatter(1440, 540)
 EndFunc
 
 Func random_scatter()
@@ -415,7 +400,7 @@ Func obtain_move_points()
 
 		If(_IsPressed($enterButtonPressed)) Then
 			ReDim $pointsToGo[$currentPoint + 1]
-			Local $newPoint = [$currentXpos, $currentXpos]
+			Local $newPoint = [$currentXpos, $currentYpos]
 			$pointsToGo[$currentPoint] = $newPoint
 			ConsoleWrite("Set point: " & $currentPoint + 1 & " at: " & _ArrayToString($pointsToGo[$currentPoint]) & @CRLF)
 			$currentPoint += 1
@@ -429,6 +414,6 @@ Func obtain_move_points()
 	ToolTip("")
 EndFunc
 
-Func anty_bot_click()
-
+Func close_npc_message_box()
+	ControlClick($hWnd, "", "C")
 EndFunc
