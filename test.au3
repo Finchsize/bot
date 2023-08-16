@@ -81,50 +81,52 @@ While 1
 	WEnd
 	$iLastSleep[$iSleepArrayIterator] = $currentSleep
 	$iSleepArrayIterator = Mod($iSleepArrayIterator + 1, $iSleepArraySize)
-
-	close_npc_message_box()
+	Sleep($currentSleep)
+	;~ close_npc_message_box()
+	Sleep($currentSleep)
 	$iRandomJumpCurrentIt = Mod($iRandomJumpCurrentIt + 1, $iRandomJumpFrequency)
 	Local $goToPointX = ($pointsToGo[$goToPoint])[0]
 	Local $goToPointY = ($pointsToGo[$goToPoint])[1]
 
 	If($iRandomJumpCurrentIt == 0) Then
 		random_jump($currentSleep)
+		Sleep(1350 + $currentSleep)
 		ContinueLoop
 	EndIf
 
 	; straight jump
 	If($currentXpos - 8 > $goToPointX And $currentYpos - 8 > $goToPointY) Then
 		jump_up($currentSleep)
-		Sleep(Mod($currentSleep, 30))
+		Sleep(Mod($currentSleep, 50))
 		scatter_up()
 	ElseIf($currentXpos + 8 < $goToPointX And $currentYpos + 8 < $goToPointY) Then
 		jump_down($currentSleep)
-		Sleep(Mod($currentSleep, 30))
+		Sleep(Mod($currentSleep, 50))
 		scatter_down()
 	ElseIf($currentXpos - 8 > $goToPointX And $currentYpos + 8 < $goToPointY) Then
 		jump_left($currentSleep)
-		Sleep(Mod($currentSleep, 30))
+		Sleep(Mod($currentSleep, 50))
 		scatter_left()
 	ElseIf($currentXpos + 8 < $goToPointX And $currentYpos - 8 > $goToPointY) Then
 		jump_right($currentSleep)
-		Sleep(Mod($currentSleep, 30))
+		Sleep(Mod($currentSleep, 50))
 		scatter_right()
 	;diagonal jump
 	ElseIf ($currentXpos - 16 > $goToPointX) Then
 		jump_x_up($currentSleep)
-		Sleep(Mod($currentSleep, 30))
+		Sleep(Mod($currentSleep, 50))
 		scatter_x_up()
 	ElseIf ($currentXpos + 16 < $goToPointX) Then
 		jump_x_down($currentSleep)
-		Sleep(Mod($currentSleep, 10))
+		Sleep(Mod($currentSleep, 50))
 		scatter_x_down()
 	ElseIf ($currentYpos - 16 > $goToPointY) Then
 		jump_y_up($currentSleep)
-		Sleep(Mod($currentSleep, 10))
+		Sleep(Mod($currentSleep, 50))
 		scatter_y_up()
 	ElseIf ($currentYpos + 16 < $goToPointY) Then
 		jump_y_down($currentSleep)
-		Sleep(Mod($currentSleep, 10))
+		Sleep(Mod($currentSleep, 50))
 		scatter_y_down()
 	Else
 		ConsoleWrite("Chane point, current position: " & $currentXpos & " , " & $currentYpos & @CRLF)
@@ -222,9 +224,9 @@ Func jump($xCordClick, $yCordClick, $currentSleep)
 	Sleep($currentSleep)
 	;debug
 	;~ ConsoleWrite("Cunter: " & $iClickCounter & @CRLF)
-	$currentClickCountCycle = Mod($iClickCounter, 100)
-	If($currentClickCountCycle > 96 ) Then
-		ToolTip("Mouse will be taken in: " & 100 - $currentClickCountCycle)
+	$currentClickCountCycle = Mod($iClickCounter, 50)
+	If($currentClickCountCycle > 46 ) Then
+		ToolTip("Mouse will be taken in: " & 50 - $currentClickCountCycle)
 	EndIf
 
 	; anty bot jail protection - one real click after 99 jumps
@@ -423,10 +425,6 @@ Func mouse_Win_GetInfo()
 	Return $a_ret
 EndFunc
 
-Func exit_bot()
-	Exit
-EndFunc
-
 Func obtain_move_points()
 	Local $qKeyPressed = "51"
 	Local $enterButtonPressed = "0D"
@@ -457,4 +455,9 @@ EndFunc
 
 Func close_npc_message_box()
 	ControlClick($hWnd, "", "C")
+EndFunc
+
+Func exit_bot()
+	ToolTip("")
+	Exit
 EndFunc
