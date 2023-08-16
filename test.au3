@@ -75,14 +75,15 @@ While 1
 		$iIsInBotCheck = True
 		Return
 	EndIf
-	Local $currentSleep = Random(5, 20, 1) * 20
+	Local $currentSleep = Random(5, 20, 1) * 10
 	While _ArraySearch($iLastSleep, $currentSleep) <> -1
 		$currentSleep = Random(5, 20, 1) * 20
 	WEnd
 	$iLastSleep[$iSleepArrayIterator] = $currentSleep
 	$iSleepArrayIterator = Mod($iSleepArrayIterator + 1, $iSleepArraySize)
 	Sleep($currentSleep)
-	;~ close_npc_message_box()
+	;close_npc_message_box()
+	ControlClick($hWnd, "", "XP2", "left")
 	Sleep($currentSleep)
 	$iRandomJumpCurrentIt = Mod($iRandomJumpCurrentIt + 1, $iRandomJumpFrequency)
 	Local $goToPointX = ($pointsToGo[$goToPoint])[0]
@@ -90,7 +91,7 @@ While 1
 
 	If($iRandomJumpCurrentIt == 0) Then
 		random_jump($currentSleep)
-		Sleep(1350 + $currentSleep)
+		Sleep(500 + $currentSleep)
 		ContinueLoop
 	EndIf
 
@@ -134,7 +135,7 @@ While 1
 	EndIf
 
 	ConsoleWrite("Going to point: " & $goToPoint & " Cord X: " & $goToPointX & " Cord Y: " & $goToPointY & @CRLF)
-	Sleep(1350 + $currentSleep)
+	Sleep(500 + $currentSleep)
 WEnd
 EndFunc
 
