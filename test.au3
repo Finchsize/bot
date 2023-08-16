@@ -45,12 +45,18 @@ $iCenterPosY_global = 689
 ;~ Local $rightBottom[2] = [616, 762]
 
 ; ape
-Local $leftTop[2] = [610, 669]
-Local $rightTop[2] = [693, 561]
-Local $leftBottom[2] = [618, 754]
-Local $rightBottom[2] = [803, 621]
+;~ Local $leftTop[2] = [610, 669]
+;~ Local $rightTop[2] = [693, 561]
+;~ Local $leftBottom[2] = [618, 754]
+;~ Local $rightBottom[2] = [803, 621]
 
-Local $pointsToGo[4] = [$leftTop, $rightBottom, $rightTop, $leftBottom]
+Local $rightTop[2] = [659, 564]
+Local $leftTop[2] = [575, 652]
+Local $leftBottom[2] = [691, 763]
+Local $rightBottom[2] = [899, 565]
+
+;~ Local $pointsToGo[4] = [$rightTop, $leftTop, $leftBottom, $rightBottom]
+Local $pointsToGo[3] = [$leftBottom, $rightTop, $rightBottom]
 
 While 1
 	Sleep(20 + Random(1, 10, 1))
@@ -58,54 +64,72 @@ WEnd
 
 Func start_hunt()
 	Local $goToPoint = 0
-	Local $iSleepArraySize = 15;
-	Local $iSleepArrayIterator = 0;
+	Local $iSleepArraySize = 15
+	Local $iSleepArrayIterator = 0
 	Local $iLastSleep[$iSleepArraySize]
+	Local $iRandomJumpFrequency = 5
+	Local $iRandomJumpCurrentIt = 0
 While 1
 	update_cords()
+	If $currentXpos == 051 And $currentYpos == 051 Then
+		$iIsInBotCheck = True
+		Return
+	EndIf
 	Local $currentSleep = Random(5, 20, 1) * 20
 	While _ArraySearch($iLastSleep, $currentSleep) <> -1
 		$currentSleep = Random(5, 20, 1) * 20
-		;ConsoleWrite("Rolled sleep: " & $currentSleep & @CRLF)
 	WEnd
 	$iLastSleep[$iSleepArrayIterator] = $currentSleep
 	$iSleepArrayIterator = Mod($iSleepArrayIterator + 1, $iSleepArraySize)
 
-	Local $begin = TimerInit()
-	If $currentXpos == 051 And $currentYpos == 051 Then
-		$iIsInBotCheck = True
-		ExitLoop
-	EndIf
-
+	close_npc_message_box()
+	$iRandomJumpCurrentIt = Mod($iRandomJumpCurrentIt + 1, $iRandomJumpFrequency)
 	Local $goToPointX = ($pointsToGo[$goToPoint])[0]
 	Local $goToPointY = ($pointsToGo[$goToPoint])[1]
 
-	; go up/down in line
-	;~ If($currentXpos - 8 > $goToPointX And $currentYpos - 8 > $goToPointY) Then
-	;~ 	jump_up($currentSleep)
-	;~ 	Sleep(Mod($currentSleep, 10))
-	;~ 	scatter_up()
-	;~ ElseIf($currentXpos + 8 < $goToPointX And $currentYpos + 8 < $goToPointY) Then
-	;~ 	jump_down($currentSleep)
-	;~ 	Sleep(Mod($currentSleep, 10))
-	;~ 	scatter_down()
-	;~ Else
-	;~ 	$goToPoint = Mod($goToPoint + 1 , 2)
-	;~ EndIf
+	If($iRandomJumpCurrentIt == 0) Then
+		random_jump($currentSleep)
+		ContinueLoop
+	EndIf
 
-	;go left/right in line
-	If($currentXpos - 8 > $goToPointX And $currentYpos + 8 > $goToPointY) Then
+	; straight jump
+	If($currentXpos - 8 > $goToPointX And $currentYpos - 8 > $goToPointY) Then
+		jump_up($currentSleep)
+		Sleep(Mod($currentSleep, 30))
+		scatter_up()
+	ElseIf($currentXpos + 8 < $goToPointX And $currentYpos + 8 < $goToPointY) Then
+		jump_down($currentSleep)
+		Sleep(Mod($currentSleep, 30))
+		scatter_down()
+	ElseIf($currentXpos - 8 > $goToPointX And $currentYpos + 8 < $goToPointY) Then
 		jump_left($currentSleep)
-		Sleep(Mod($currentSleep, 10))
+		Sleep(Mod($currentSleep, 30))
 		scatter_left()
 	ElseIf($currentXpos + 8 < $goToPointX And $currentYpos - 8 > $goToPointY) Then
 		jump_right($currentSleep)
-		Sleep(Mod($currentSleep, 10))
+		Sleep(Mod($currentSleep, 30))
 		scatter_right()
+	;diagonal jump
+	ElseIf ($currentXpos - 16 > $goToPointX) Then
+		jump_x_up($currentSleep)
+		Sleep(Mod($currentSleep, 30))
+		scatter_x_up()
+	ElseIf ($currentXpos + 16 < $goToPointX) Then
+		jump_x_down($currentSleep)
+		Sleep(Mod($currentSleep, 10))
+		scatter_x_down()
+	ElseIf ($currentYpos - 16 > $goToPointY) Then
+		jump_y_up($currentSleep)
+		Sleep(Mod($currentSleep, 10))
+		scatter_y_up()
+	ElseIf ($currentYpos + 16 < $goToPointY) Then
+		jump_y_down($currentSleep)
+		Sleep(Mod($currentSleep, 10))
+		scatter_y_down()
 	Else
-		$goToPoint = Mod($goToPoint + 1 , 2)
+		ConsoleWrite("Chane point, current position: " & $currentXpos & " , " & $currentYpos & @CRLF)
+		$goToPoint = Mod($goToPoint + 1 , UBound($pointsToGo))
 	EndIf
-
 
 	ConsoleWrite("Going to point: " & $goToPoint & " Cord X: " & $goToPointX & " Cord Y: " & $goToPointY & @CRLF)
 	Sleep(1350 + $currentSleep)
@@ -173,6 +197,22 @@ Func scatter_right()
 	scatter(1440, 540)
 EndFunc
 
+Func scatter_y_up()
+	scatter($iCenterPosX + 480, $iCenterPosY - 270)
+EndFunc
+
+Func scatter_y_down()
+	scatter($iCenterPosX - 480, $iCenterPosY + 270)
+EndFunc
+
+Func scatter_x_up()
+	scatter($iCenterPosX - 480, $iCenterPosY - 270)
+EndFunc
+
+Func scatter_x_down()
+	scatter($iCenterPosX + 480, $iCenterPosY)
+EndFunc
+
 Func random_scatter()
 	scatter($iCenterPosX + Random(-50, 50, 1), $iCenterPosY + Random(-50, 50, 1))
 EndFunc
@@ -219,6 +259,7 @@ Func scatter($xCordClick, $yCordClick)
 	Local $wParam = 0x0008 ; hold ctrl
 	Local $lParam = _WinAPI_MakeLong($xCordClick,$yCordClick)
 	_SendMessage($hWndControl, $WM_RBUTTONDOWN, $wParam , $lParam)
+	Sleep(Random(30, 80, 1))
 	_SendMessage($hWndControl, $WM_RBUTTONUP, $wParam , $lParam)
 EndFunc
 
