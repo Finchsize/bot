@@ -24,8 +24,8 @@ HotKeySet("{F8}", "get_current_window")
 Global $iContinueGetHandles = True
 Global $iIsInBotCheck = False
 
-$hWnd = 0x004D1344
-$hWndControl = 0x000E063C
+$hWnd = 0
+$hWndControl = 0
 $currentXpos = 0
 $currentYpos = 0
 $sImageFileExtenstion = ".tiff";
@@ -58,34 +58,28 @@ WEnd
 
 Func get_current_window()
 	Capture_Entire_Window($hWnd, @ScriptDir & "\temp\entire_screen.tiff")
-	Sleep(2000)
-	crop_cords_from_image(@ScriptDir & "\temp\entire_screen.tiff", @ScriptDir & "\temp\cropped_screen_transformed.tiff", 878, 650, 60, 750)
+	Sleep(1000)
+	crop_cords_from_image(@ScriptDir & "\temp\entire_screen.tiff", @ScriptDir & "\temp\cropped_screen_transformed.tiff", 878, 950, 60, 980)
 	crop_cords_from_image(@ScriptDir & "\temp\entire_screen.tiff", @ScriptDir & "\temp\entire_screen_transformed.tiff", 0, 0, 0, 0)
+	WinSetOnTop($hWnd, "", $WINDOWS_NOONTOP)
 EndFunc
 
 Func type_validation_code()
-	Exit
+	$iIsInBotCheck = True
 	ConsoleWrite("AntyBot has been triggered!" & @CRLF)
 	Local $windowAbsolutePosition = WinGetPos($hWnd)
-	ConsoleWrite("Window absolute position: " & _ArrayToString($windowAbsolutePosition) & @CRLF)
 
+	; put the window on top
 	AutoItSetOption("MouseClickDelay", 80)
 	WinSetOnTop($hWnd, "", $WINDOWS_ONTOP)
 	WinSetState($hWnd, "", @SW_SHOW)
 	WinActivate($hWnd)
 	_winapi_setActiveWindow($hwnd)
-	
-	Capture_Window($hWnd, 1600, 1000, $sImageFilePathAntyBot, 878, 650, 60, @ScriptDir & "\temp\val_code")
-	Local $hFileOpen = FileOpen(@ScriptDir & "\temp\val_code" & ".txt", $FO_READ)
-	If $hFileOpen = -1 Then
-			ToolTip("An error occurred when reading the file. File Path: " & @ScriptDir & "\temp\val_code" & ".txt", 30, 0)
-			Return
-	EndIf
+	Sleep(300)
 
 	; click on NPC
 	MouseClick("left", $windowAbsolutePosition[0] + 1151, $windowAbsolutePosition[1] + 399, 1, 10)
 	Sleep(300)
-
 	#cs NPC click without mouse - WIP
 	Local $MK_CONTROL = 0x0008
 	Local $MK_LBUTTON = 0x0001
@@ -96,11 +90,32 @@ Func type_validation_code()
 	_WinAPI_PostMessage($hWndControl, $WM_LBUTTONUP, $MK_CONTROL, $lParam)
 	#ce
 	
+	
+	; capture entire screen
+	Capture_Entire_Window($hWnd, @ScriptDir & "\temp\entire_screen.tiff")
+
+	; capture the code value
+	Capture_Window($hWnd, 1600, 1000, $sImageFilePathAntyBot, 878, 650, 60, @ScriptDir & "\temp\val_code")
+	Sleep(200)
+	crop_cords_from_image(@ScriptDir & "\temp\entire_screen.tiff", @ScriptDir & "\temp\val_code.tiff", 878, 950, 60, 980)
+	Sleep(300)
+
+	; run tesseract to decode the value from image to text
+	run_tesseract(@ScriptDir & "\temp\val_code", @ScriptDir & "\temp\val_code.tiff")
+	Sleep(400)
+	
 	; click on text field
 	MouseClick("left", $windowAbsolutePosition[0] + 784, $windowAbsolutePosition[1] + 126, 1, 10)
 	Sleep(300)
 
-	; read tesseract file and send value to input
+	; open the file with code to put
+	Local $hFileOpen = FileOpen(@ScriptDir & "\temp\val_code" & ".txt", $FO_READ)
+	If $hFileOpen = -1 Then
+			ToolTip("An error occurred when reading the file. File Path: " & @ScriptDir & "\temp\val_code" & ".txt", 30, 0)
+			Return
+	EndIf
+
+	; read text file and send value to input
 	Local $sOutput = FileRead($hFileOpen)
 	FileClose($hFileOpen)
 	Local $sOutputClean = StringReplace($sOutput, @LF, "")
@@ -123,6 +138,7 @@ Func type_validation_code()
 	; cleanup
 	WinSetOnTop($hWnd, "", $WINDOWS_NOONTOP)
 	AutoItSetOption ("MouseClickDelay", 10)
+	$iIsInBotCheck = False
 EndFunc
 
 Func start_hunt()
@@ -142,7 +158,6 @@ While 1
 		close_npc_message_box()
 		type_validation_code()
 		Sleep(500)
-		ContinueLoop
 	EndIf
 	Local $currentSleep = Random(5, 20, 1) * 10
 	While _ArraySearch($iLastSleep, $currentSleep) <> -1
@@ -200,12 +215,11 @@ While 1
 		Sleep(Mod($currentSleep, 50))
 		scatter_y_down()
 	Else
-		ConsoleWrite("Chane point, current position: " & $currentXpos & " , " & $currentYpos & @CRLF)
 		$goToPoint = Mod($goToPoint + 1 , UBound($pointsToGo))
 	EndIf
 
 	ConsoleWrite("Going to point: " & $goToPoint & " Cord X: " & $goToPointX & " Cord Y: " & $goToPointY & @CRLF)
-	Sleep(500 + $currentSleep)
+	Sleep(300 + $currentSleep)
 WEnd
 EndFunc
 
@@ -310,7 +324,6 @@ Func jump($xCordClick, $yCordClick, $currentSleep)
 		ConsoleWrite("REAL CLICK AT: " & $iClickCounter & @CRLF)
 		WinSetOnTop($hWnd, "", $WINDOWS_NOONTOP)
 		MouseMove($currentMousePos[0], $currentMousePos[1] ,0)
-		MouseClick("left")
 		ToolTip("")
 		Return
 	EndIf
@@ -454,9 +467,9 @@ Func Capture_Window($hWnd, $w, $h, $sImageFilePath, $cropLeft, $cropRight, $nTop
 	_GDIPlus_GraphicsDispose($hGraphics)
     _GDIPlus_Shutdown()
 
-	read_cords_from_text_file($ResultTextPath)
 	run_tesseract($ResultTextPath, $sImageFilePath)
-	
+	Sleep(150)
+	read_cords_from_text_file($ResultTextPath)
 EndFunc 
 
 Func run_tesseract($ResultTextPath, $sImageFilePath)
