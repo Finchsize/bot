@@ -12,22 +12,25 @@
 #include <WinAPISys.au3>
 #include <Misc.au3>
 
+HotKeySet("!t", "type_validation_code")
 HotKeySet("^t", "start_hunt")
 HotKeySet("^q", "exit_bot")
 HotKeySet("^m", "get_cords_in_loop")
 HotKeySet("^i", "get_window_handles")
 HotKeySet("!i", "exit_get_window_handles")
 HotKeySet("^p", "obtain_move_points")
+HotKeySet("{F8}", "get_current_window")
 
 Global $iContinueGetHandles = True
 Global $iIsInBotCheck = False
 
 $hWnd = 0x004D1344
 $hWndControl = 0x000E063C
-$currentXpos = 0;
-$currentYpos = 0;
+$currentXpos = 0
+$currentYpos = 0
 $sImageFileExtenstion = ".tiff";
 $sImageFilePath = @ScriptDir & "\temp\cords" & $sImageFileExtenstion
+$sImageFilePathAntyBot = @ScriptDir & "\temp\val_code" & $sImageFileExtenstion
 ; hControlPositions
 $iCenterPosX = 960
 $iCenterPosY = 540
@@ -38,31 +41,94 @@ $iClickCounter = 0
 $iCenterPosX_global = 3857
 $iCenterPosY_global = 689
 
-; tc robins
-;~ Local $leftTop[2] = [411, 713]
-;~ Local $rightTop[2] = [524, 675]
-;~ Local $leftBottom[2] = [451, 791]
-;~ Local $rightBottom[2] = [616, 762]
+; ape decent hunting path
+Local $p1[2] = [632, 582]
+Local $p2[2] = [700, 555]
+Local $p3[2] = [897, 564]
+Local $p4[2] = [626, 831]
+Local $p5[2] = [654, 777]
+Local $p6[2] = [627, 674]
 
-; ape
-;~ Local $leftTop[2] = [610, 669]
-;~ Local $rightTop[2] = [693, 561]
-;~ Local $leftBottom[2] = [618, 754]
-;~ Local $rightBottom[2] = [803, 621]
 
-Local $rightTop[2] = [659, 564]
-Local $leftTop[2] = [575, 652]
-Local $leftBottom[2] = [691, 763]
-Local $rightBottom[2] = [899, 565]
-
-;~ Local $pointsToGo[4] = [$rightTop, $leftTop, $leftBottom, $rightBottom]
-Local $pointsToGo[3] = [$leftBottom, $rightTop, $rightBottom]
+Local $pointsToGo[6] = [$p1, $p2, $p3, $p4, $p5, $p6]
 
 While 1
 	Sleep(20 + Random(1, 10, 1))
 WEnd
 
+Func get_current_window()
+	Capture_Entire_Window($hWnd, @ScriptDir & "\temp\entire_screen.tiff")
+	Sleep(2000)
+	crop_cords_from_image(@ScriptDir & "\temp\entire_screen.tiff", @ScriptDir & "\temp\cropped_screen_transformed.tiff", 878, 650, 60, 750)
+	crop_cords_from_image(@ScriptDir & "\temp\entire_screen.tiff", @ScriptDir & "\temp\entire_screen_transformed.tiff", 0, 0, 0, 0)
+EndFunc
+
+Func type_validation_code()
+	Exit
+	ConsoleWrite("AntyBot has been triggered!" & @CRLF)
+	Local $windowAbsolutePosition = WinGetPos($hWnd)
+	ConsoleWrite("Window absolute position: " & _ArrayToString($windowAbsolutePosition) & @CRLF)
+
+	AutoItSetOption("MouseClickDelay", 80)
+	WinSetOnTop($hWnd, "", $WINDOWS_ONTOP)
+	WinSetState($hWnd, "", @SW_SHOW)
+	WinActivate($hWnd)
+	_winapi_setActiveWindow($hwnd)
+	
+	Capture_Window($hWnd, 1600, 1000, $sImageFilePathAntyBot, 878, 650, 60, @ScriptDir & "\temp\val_code")
+	Local $hFileOpen = FileOpen(@ScriptDir & "\temp\val_code" & ".txt", $FO_READ)
+	If $hFileOpen = -1 Then
+			ToolTip("An error occurred when reading the file. File Path: " & @ScriptDir & "\temp\val_code" & ".txt", 30, 0)
+			Return
+	EndIf
+
+	; click on NPC
+	MouseClick("left", $windowAbsolutePosition[0] + 1151, $windowAbsolutePosition[1] + 399, 1, 10)
+	Sleep(300)
+
+	#cs NPC click without mouse - WIP
+	Local $MK_CONTROL = 0x0008
+	Local $MK_LBUTTON = 0x0001
+	Local $lParam = _WinAPI_MakeLong($windowAbsolutePosition[0] + 1151, $windowAbsolutePosition[1] + 399)
+	_WinAPI_PostMessage($hWndControl, $WM_LBUTTONDOWN, $MK_CONTROL, $lParam)
+	Sleep(100)
+	$lParam = _WinAPI_MakeLong(1151 - 5,399 - 2)
+	_WinAPI_PostMessage($hWndControl, $WM_LBUTTONUP, $MK_CONTROL, $lParam)
+	#ce
+	
+	; click on text field
+	MouseClick("left", $windowAbsolutePosition[0] + 784, $windowAbsolutePosition[1] + 126, 1, 10)
+	Sleep(300)
+
+	; read tesseract file and send value to input
+	Local $sOutput = FileRead($hFileOpen)
+	FileClose($hFileOpen)
+	Local $sOutputClean = StringReplace($sOutput, @LF, "")
+	ConsoleWrite("Verification code to be send: " & $sOutputClean & @CRLF)
+	Send($sOutputClean)
+	Sleep(300)
+
+	; click on OK button
+	MouseClick("left", $windowAbsolutePosition[0] + 859, $windowAbsolutePosition[1] + 129, 1, 10)
+	Sleep(300)
+
+	; click on NPC
+	MouseClick("left", $windowAbsolutePosition[0] + 1151, $windowAbsolutePosition[1] + 399, 1, 10)
+	Sleep(300)
+
+	; click on tp to the same place
+	MouseClick("left", $windowAbsolutePosition[0] + 1049, $windowAbsolutePosition[1] + 132, 1, 10)
+	Sleep(300)
+
+	; cleanup
+	WinSetOnTop($hWnd, "", $WINDOWS_NOONTOP)
+	AutoItSetOption ("MouseClickDelay", 10)
+EndFunc
+
 Func start_hunt()
+	If ($iIsInBotCheck) Then
+		Return 0
+	EndIf
 	Local $goToPoint = 0
 	Local $iSleepArraySize = 15
 	Local $iSleepArrayIterator = 0
@@ -71,9 +137,12 @@ Func start_hunt()
 	Local $iRandomJumpCurrentIt = 0
 While 1
 	update_cords()
-	If $currentXpos == 051 And $currentYpos == 051 Then
-		$iIsInBotCheck = True
-		Return
+	Sleep(200)
+	If $currentXpos == 51 And $currentYpos == 51 Then
+		close_npc_message_box()
+		type_validation_code()
+		Sleep(500)
+		ContinueLoop
 	EndIf
 	Local $currentSleep = Random(5, 20, 1) * 10
 	While _ArraySearch($iLastSleep, $currentSleep) <> -1
@@ -82,7 +151,6 @@ While 1
 	$iLastSleep[$iSleepArrayIterator] = $currentSleep
 	$iSleepArrayIterator = Mod($iSleepArrayIterator + 1, $iSleepArraySize)
 	Sleep($currentSleep)
-	;close_npc_message_box()
 	ControlClick($hWnd, "", "XP2", "left")
 	Sleep($currentSleep)
 	$iRandomJumpCurrentIt = Mod($iRandomJumpCurrentIt + 1, $iRandomJumpFrequency)
@@ -91,6 +159,8 @@ While 1
 
 	If($iRandomJumpCurrentIt == 0) Then
 		random_jump($currentSleep)
+		Sleep($currentSleep)
+		close_npc_message_box()
 		Sleep(500 + $currentSleep)
 		ContinueLoop
 	EndIf
@@ -240,6 +310,7 @@ Func jump($xCordClick, $yCordClick, $currentSleep)
 		ConsoleWrite("REAL CLICK AT: " & $iClickCounter & @CRLF)
 		WinSetOnTop($hWnd, "", $WINDOWS_NOONTOP)
 		MouseMove($currentMousePos[0], $currentMousePos[1] ,0)
+		MouseClick("left")
 		ToolTip("")
 		Return
 	EndIf
@@ -267,29 +338,75 @@ Func scatter($xCordClick, $yCordClick)
 EndFunc
 
 Func update_cords()
-	Capture_Window($hWnd, 292, 20, $sImageFilePath)
+	Capture_Window($hWnd, 292, 20, $sImageFilePath, 70, 170)
 EndFunc
 
 Func get_cords_in_loop()
 	While 1
-		Capture_Window($hWnd, 292, 20, $sImageFilePath)
+		Capture_Window($hWnd, 292, 20, $sImageFilePath, 70, 170)
 		ToolTip("X: " & $currentXpos & " Y: " & $currentYpos)
 		Sleep(500)
 	WEnd
 EndFunc
 
-Func Capture_Window($hWnd, $w, $h, $sImageFilePath)
-	;for debug
-	$begin = TimerInit()
+Func Capture_Entire_Window($hWnd, $sImageFilePath)
+	Local $hDC_Capture = _WinAPI_GetDC($hWnd)
+	Local $hMemDC = _WinAPI_CreateCompatibleDC($hDC_Capture)
+	Local $hBitmap = _WinAPI_CreateCompatibleBitmap($hDC_Capture, 1920, 1080)
+	_WinAPI_SelectObject($hMemDC, $hBitmap)
+	_WinAPI_PrintWindow($hWnd, $hMemDC, False)
+	_WinAPI_SaveHBITMAPToFile($sImageFilePath, $hBitmap)
+EndFunc
 
-	;capture cords
+Func crop_cords_from_image($sSourceImage, $sImageFilePathNew, $cropLeft, $cropRight, $cropTop, $cropBottom)
+	_GDIPlus_Startup()
+	$hImage = _GDIPlus_BitmapCreateFromFile($sSourceImage)
+	;change format
+	$iX = _GDIPlus_ImageGetWidth($hImage)
+	$iY = _GDIPlus_ImageGetHeight($hImage)
+	$hImageCropped = _GDIPlus_BitmapCloneArea($hImage, $cropLeft, $cropTop, $iX-$cropLeft-$cropRight, $iY-$cropTop-$cropBottom, $GDIP_PXF32ARGB)
+
+	; replace cords text colors
+    Local $hGraphics = _GDIPlus_ImageGetGraphicsContext($hImageCropped)
+	Local $aRemapTable[3][2]
+    $aRemapTable[0][0] = 2
+    $aRemapTable[1][0] = 0xFF7F7F7F ;Old Color - letters shadow
+    $aRemapTable[1][1] = 0xFF000000 ;New Color - letters shadow deleted
+    $aRemapTable[2][0] = 0xFFFFFF00 ;Old Color - letters color (yellow)
+    $aRemapTable[2][1] = 0xFFFFFFFF ;New Color - letter color (white)
+	Local $hIA = _GDIPlus_ImageAttributesCreate()
+    _GDIPlus_ImageAttributesSetRemapTable($hIA, $aRemapTable)
+	_GDIPlus_GraphicsDrawImageRectRect($hGraphics, $hImageCropped, 0, 0, $iX, $iY, 0, 0, $iX, $iY, $hIA)
+	
+	Local $iWidth = _GDIPlus_ImageGetWidth($hImageCropped)
+	Local $iHeight = _GDIPlus_ImageGetHeight($hImageCropped)
+	Local $tLock = _GDIPlus_BitmapLockBits($hImageCropped, 0, 0, $iWidth, $iHeight,  BitOR($GDIP_ILMWRITE, $GDIP_ILMREAD), $GDIP_PXF32ARGB)
+	Local $tPixel = DllStructCreate("int color[" & $iWidth * $iHeight & "];", $tLock.scan0)
+
+	For $i = 1 To $iWidth * $iHeight
+	  If $tPixel.color(($i)) <> 0xFFFFFFFF Then $tPixel.color(($i)) = 0xFF000000
+	Next
+	
+	_GDIPlus_BitmapUnlockBits($hImageCropped, $tPixel)
+	_GDIPlus_ImageSaveToFile($hImageCropped, $sImageFilePathNew)
+
+	;delete gdi plus handles
+	_GDIPlus_ImageAttributesDispose($hIA)
+    _GDIPlus_ImageDispose($hImageCropped)
+	_GDIPlus_GraphicsDispose($hGraphics)
+	_GDIPlus_ImageDispose($hImage)
+    _GDIPlus_Shutdown()
+	
+EndFunc
+
+Func Capture_Window($hWnd, $w, $h, $sImageFilePath, $cropLeft, $cropRight, $nTop = 0, $ResultTextPath = @ScriptDir & "\temp\cords")
     ;winapi part
 	Local $hDC_Capture = _WinAPI_GetDC($hWnd)
 	Local $hMemDC = _WinAPI_CreateCompatibleDC($hDC_Capture)
 	Local $hBitmap = _WinAPI_CreateCompatibleBitmap($hDC_Capture, $w, $h)
 	_WinAPI_SelectObject($hMemDC, $hBitmap)
 	_WinAPI_PrintWindow($hWnd, $hMemDC, False)
-	$afterWinApi = TimerInit()
+
 	;copy to gdi plus
 	_GDIPlus_Startup()
 	$hImage = _GDIPlus_BitmapCreateFromHBITMAP($hBitmap)
@@ -304,9 +421,7 @@ Func Capture_Window($hWnd, $w, $h, $sImageFilePath)
 	;crop image
 	$iX = _GDIPlus_ImageGetWidth($hImage)
 	$iY = _GDIPlus_ImageGetHeight($hImage)
-	$cropLeft = 70
-	$cropRight = 170
-	$hImageCropped = _GDIPlus_BitmapCloneArea($hImage, $cropLeft, 0, $iX-$cropLeft-$cropRight, $iY, $GDIP_PXF32ARGB)
+	$hImageCropped = _GDIPlus_BitmapCloneArea($hImage, $cropLeft, $nTop, $iX-$cropLeft-$cropRight, $iY-$nTop, $GDIP_PXF32ARGB)
 	
 	; replace cords text colors
     Local $hGraphics = _GDIPlus_ImageGetGraphicsContext($hImageCropped)
@@ -332,23 +447,19 @@ Func Capture_Window($hWnd, $w, $h, $sImageFilePath)
 	_GDIPlus_BitmapUnlockBits($hImageCropped, $tPixel)
 	_GDIPlus_ImageSaveToFile($hImageCropped, $sImageFilePath)
 	
-	;delete gdu plus handles
+	;delete gdi plus handles
 	_GDIPlus_ImageAttributesDispose($hIA)
     _GDIPlus_ImageDispose($hImageCropped)
 	_GDIPlus_ImageDispose($hImage)
 	_GDIPlus_GraphicsDispose($hGraphics)
     _GDIPlus_Shutdown()
 
-	Local $ResultTextPath = @ScriptDir & "\temp\cords"
 	read_cords_from_text_file($ResultTextPath)
-	run_tesseract($ResultTextPath)
-	;for debug
-	;ConsoleWrite("Function Capture_Window execution time: " & TimerDiff($begin) & @CRLF);
-	;ConsoleWrite("Function Capture_Window execution time: " & TimerDiff($afterWinApi) & @CRLF);
+	run_tesseract($ResultTextPath, $sImageFilePath)
 	
 EndFunc 
 
-Func run_tesseract($ResultTextPath)
+Func run_tesseract($ResultTextPath, $sImageFilePath)
 	Local $TesseractExePath = "C:\Program Files\Tesseract-OCR\tesseract.exe"
 	Local $iPID = Run($TesseractExePath & " " &  $sImageFilePath & " " & $ResultTextPath &" nobatch digits" , "" , @SW_HIDE, $RUN_CREATE_NEW_CONSOLE)
 	StdioClose($iPID)
@@ -365,8 +476,8 @@ Func read_cords_from_text_file($ResultTextPath)
 	Local $sOutputClean = StringReplace($sOutput, ".", "")
 	$sOutputClean = StringReplace($sOutputClean, @LF, "")
 	If StringLen($sOutputClean) == 6 Then
-		$currentXpos = StringLeft($sOutputClean, 3)
-		$currentYpos = StringRight($sOutputClean, 3)
+		$currentXpos = Number(StringLeft($sOutputClean, 3))
+		$currentYpos = Number(StringRight($sOutputClean, 3))
 		;for debugging position processing
 		;ToolTip("Position x: " & $currentXpos  & @CRLF & "Position y: " & $currentYpos, 0, 30, "Raw position in game: " & $sOutput)
 	;~ Else
@@ -432,7 +543,7 @@ Func obtain_move_points()
 	Local $currentPoint = 0
 	Local $redrawTooltip = 0
 	Do
-		Capture_Window($hWnd, 292, 20, $sImageFilePath)
+		Capture_Window($hWnd, 292, 20, $sImageFilePath, 70, 170)
 		If(Mod($redrawTooltip, 10) == 0) Then
 			ToolTip("Press Enter to set a travel point: " & $currentPoint + 1 & @CRLF & _
 					"Press Q to finish")
