@@ -11,6 +11,7 @@
 #include <WinAPISysWin.au3>
 #include <WinAPISys.au3>
 #include <Misc.au3>
+#include <WinAPIDlg.au3>
 
 HotKeySet("!t", "type_validation_code")
 HotKeySet("^t", "start_hunt")
@@ -75,11 +76,11 @@ Func type_validation_code()
 	WinSetState($hWnd, "", @SW_SHOW)
 	WinActivate($hWnd)
 	_winapi_setActiveWindow($hwnd)
-	Sleep(300)
+	Sleep(200)
 
 	; click on NPC
 	MouseClick("left", $windowAbsolutePosition[0] + 1151, $windowAbsolutePosition[1] + 399, 1, 10)
-	Sleep(300)
+	Sleep(200)
 	#cs NPC click without mouse - WIP
 	Local $MK_CONTROL = 0x0008
 	Local $MK_LBUTTON = 0x0001
@@ -93,20 +94,19 @@ Func type_validation_code()
 	
 	; capture entire screen
 	Capture_Entire_Window($hWnd, @ScriptDir & "\temp\entire_screen.tiff")
+	Sleep(300)
 
 	; capture the code value
-	Capture_Window($hWnd, 1600, 1000, $sImageFilePathAntyBot, 878, 650, 60, @ScriptDir & "\temp\val_code")
-	Sleep(200)
 	crop_cords_from_image(@ScriptDir & "\temp\entire_screen.tiff", @ScriptDir & "\temp\val_code.tiff", 878, 950, 60, 980)
 	Sleep(300)
 
 	; run tesseract to decode the value from image to text
 	run_tesseract(@ScriptDir & "\temp\val_code", @ScriptDir & "\temp\val_code.tiff")
-	Sleep(400)
+	Sleep(200)
 	
 	; click on text field
 	MouseClick("left", $windowAbsolutePosition[0] + 784, $windowAbsolutePosition[1] + 126, 1, 10)
-	Sleep(300)
+	Sleep(150)
 
 	; open the file with code to put
 	Local $hFileOpen = FileOpen(@ScriptDir & "\temp\val_code" & ".txt", $FO_READ)
@@ -121,19 +121,19 @@ Func type_validation_code()
 	Local $sOutputClean = StringReplace($sOutput, @LF, "")
 	ConsoleWrite("Verification code to be send: " & $sOutputClean & @CRLF)
 	Send($sOutputClean)
-	Sleep(300)
+	Sleep(200)
 
 	; click on OK button
 	MouseClick("left", $windowAbsolutePosition[0] + 859, $windowAbsolutePosition[1] + 129, 1, 10)
-	Sleep(300)
+	Sleep(200)
 
 	; click on NPC
 	MouseClick("left", $windowAbsolutePosition[0] + 1151, $windowAbsolutePosition[1] + 399, 1, 10)
-	Sleep(300)
+	Sleep(200)
 
 	; click on tp to the same place
 	MouseClick("left", $windowAbsolutePosition[0] + 1049, $windowAbsolutePosition[1] + 132, 1, 10)
-	Sleep(300)
+	Sleep(200)
 
 	; cleanup
 	WinSetOnTop($hWnd, "", $WINDOWS_NOONTOP)
@@ -175,8 +175,8 @@ While 1
 	If($iRandomJumpCurrentIt == 0) Then
 		random_jump($currentSleep)
 		Sleep($currentSleep)
-		close_npc_message_box()
-		Sleep(500 + $currentSleep)
+		;~ close_npc_message_box()
+		;~ Sleep(500 + $currentSleep)
 		ContinueLoop
 	EndIf
 
@@ -514,18 +514,10 @@ Func get_window_handles()
 		Local $relativeMousePos = MouseGetPos()
 		$hWnd = $a_info[0]
 		$hWndControl = $a_info[1]
-		If ($iIsInBotCheck) Then
-			ConsoleWrite("Window hwnd = " & $a_info[0] & @CRLF & _
-			"Control hwnd = " & $a_info[1] & @CRLF & _
-			"Window Title = " & $a_info[2] & @CRLF & _
-			"Control Title = " & WinGetTitle($a_info[1]) & @CRLF & _
-			"Mouse X Pos global = " & $a_info[3] & @CRLF & _
-			"Mouse Y Pos global = " & $a_info[4] & @CRLF & _
-			"Mouse X Pos control = " & MouseGetPos()[0] & @CRLF & _
-			"Mouse Y Pos control = " & MouseGetPos()[1])
-		EndIf
 		ToolTip("Window hwnd = " & $a_info[0] & @CRLF & _
+			"Window ID = " & _WinAPI_GetDlgCtrlID($a_info[0]) & @CRLF & _
 			"Control hwnd = " & $a_info[1] & @CRLF & _
+			"Control ID = " & _WinAPI_GetDlgCtrlID($a_info[1]) & @CRLF & _
 			"Window Title = " & $a_info[2] & @CRLF & _
 			"Control Title = " & WinGetTitle($a_info[1]) & @CRLF & _
 			"Mouse X Pos global = " & $a_info[3] & @CRLF & _
