@@ -17,7 +17,7 @@ GUICtrlSetState(-1, $GUI_DISABLE)
 $BTN_EXIT = GUICtrlCreateButton("Exit", 488, 400, 75, 25)
 $BTN_GET_CORDS_IN_LOOP = GUICtrlCreateButton("Get cords in loop", 24, 96, 137, 33)
 GUICtrlSetState(-1, $GUI_DISABLE)
-$BTN_GET_WINDOW_HANDLES = GUICtrlCreateButton("Get window handles", 24, 136, 139, 33)
+$BTN_GET_HANDLES = GUICtrlCreateButton("Get window handles", 24, 136, 139, 33)
 $LST_HUNTING_POINTS = GUICtrlCreateList("", 336, 35, 89, 344)
 GUICtrlSetData(-1, "626,831|627,674|632,582|654,777|700,555|897,564")
 GUICtrlSetBkColor(-1, 0xFFFFFF)
@@ -32,6 +32,13 @@ $BTN_LOAD_CONFIGURATION = GUICtrlCreateButton("Load configuration", 16, 376, 139
 $BTN_ADD_POINT = GUICtrlCreateButton("Add Point", 440, 40, 107, 25)
 $BTN_ADD_POINT_AUTO = GUICtrlCreateButton("Add Point - AUTO", 440, 72, 107, 25)
 GUICtrlSetState(-1, $GUI_DISABLE)
+$BTN_STOP_HUNTING = GUICtrlCreateButton("Stop hunting", 168, 16, 131, 33)
+GUICtrlSetState(-1, $GUI_DISABLE)
+$BTN_GET_CORDS_IN_LOOP_STOP = GUICtrlCreateButton("STOP", 168, 96, 131, 33)
+GUICtrlSetState(-1, $GUI_DISABLE)
+$INPUT_CLIENT_INSTANCE = GUICtrlCreateInput("", 16, 312, 137, 21)
+GUICtrlSetState(-1, $GUI_DISABLE)
+$BTN_ROLL_INSTANCE_NAME = GUICtrlCreateButton("Change instance name", 168, 312, 129, 25)
 GUISetState(@SW_SHOW)
 #EndRegion ### END Koda GUI section ###
 
@@ -52,70 +59,92 @@ GUISetState(@SW_SHOW)
 #include <GuiListView.au3>
 #include <String.au3>
 #include <Debug.au3>
+#include <GuiButton.au3>
 
 GUISetIcon(@ScriptDir & "\bot.ico")
 TraySetIcon(@ScriptDir & "\bot.ico")
 
+$instanceName = ""
+$scriptTempDir = ""
+$scriptSaveDir = ""
+initialize()
+
 $hWnd = 0
 $hWndControl = 0
+$clientWidth = 0
+$clientHeight = 0
 
 While 1
-	$nMsg = GUIGetMsg()
-	Switch $nMsg
-		Case $GUI_EVENT_CLOSE
-			clean_exit()
-		Case $BTN_EXIT
-			clean_exit()
-		Case $BTN_LOAD_FROM_FILE
-			load_points_from_file()
-		Case $BTN_GAME_WINDOWS
-			show_game_instances()
-		Case $BTN_GET_WINDOW_HANDLES
-			get_window_handles()
+	$msg = GUIGetMsg()
+	Switch $msg
 		Case $BTN_START_HUNTING
 			start_hunt()
+		Case $BTN_STOP_HUNTING
+			stop_hunt()
+		Case $BTN_TYPE_VALIDATION_CODE
+			type_validation_code()
+		Case $BTN_GET_CORDS_IN_LOOP
+			get_cords_in_loop()
+		Case $BTN_GET_HANDLES
+			get_window_handles()
+		Case $BTN_LOAD_FROM_FILE
+			load_points_from_file()
+		Case $BTN_ROLL_INSTANCE_NAME
+			roll_new_instance_name()
 		Case $BTN_SAVE_CONFIGURATION
 			save_configuration()
+		Case $BTN_LOAD_CONFIGURATION
+			load_configuration()
+		Case $BTN_ADD_POINT
+			add_point_manually()
+		Case $BTN_ADD_POINT_AUTO
+			add_point_automatically()
 		Case $BTN_DELETE_POINT
 			delete_point()
 		Case $BTN_EDIT_POINT
 			edit_point()
+		Case $BTN_GAME_WINDOWS
+			show_game_instances()
+		Case $GUI_EVENT_CLOSE
+			clean_exit()
+		Case $BTN_EXIT
+			clean_exit()
 	EndSwitch
 WEnd
 
-Func delete_point()
-	_GUICtrlListBox_DeleteString($LST_HUNTING_POINTS, _GUICtrlListBox_GetCaretIndex($LST_HUNTING_POINTS))
+Func start_hunt()
+	GUICtrlSetState($BTN_START_HUNTING, $GUI_DISABLE)
+	GUICtrlSetState($BTN_STOP_HUNTING, $GUI_ENABLE)
 EndFunc
 
-Func edit_point()
-	Local $selectedItemIndex = _GUICtrlListBox_GetCurSel($LST_HUNTING_POINTS)
-	Local $currentValue = _GUICtrlListBox_GetText($LST_HUNTING_POINTS, $selectedItemIndex)
-	Local $newValue = InputBox("Change cords", "Enter value as xxx,xxx example: 555,555", $currentValue)
-	_GUICtrlListBox_BeginUpdate($LST_HUNTING_POINTS)
-	_GUICtrlListBox_ReplaceString($LST_HUNTING_POINTS, $selectedItemIndex, $newValue)
-	_GUICtrlListBox_EndUpdate($LST_HUNTING_POINTS)
+Func stop_hunt()
+	GUICtrlSetState($BTN_START_HUNTING, $GUI_ENABLE)
+	GUICtrlSetState($BTN_STOP_HUNTING, $GUI_DISABLE)
 EndFunc
 
-Func save_configuration()
-	Local $pointsCount = _GUICtrlListBox_GetCount($LST_HUNTING_POINTS)
-	Local $pointsToSave = obtain_points_from_lst_ctrl()
-	Local Const $filePath = @ScriptDir & "\saved\points.txt"
-	Local $hFileOpen = FileOpen($filePath, $FO_OVERWRITE)
-	For $point In $pointsToSave
-		FileWriteLine($filePath, $point)
-	Next
-	FileClose($filePath)
-
-	MsgBox($MB_TASKMODAL, "Saved", "Configuration saved")
+Func type_validation_code()
 EndFunc
 
-Func obtain_points_from_lst_ctrl()
-	Local $pointsCount = _GUICtrlListBox_GetCount($LST_HUNTING_POINTS)
-	Local $points[$pointsCount]
-	For $i = 0 To $pointsCount-1 Step +1
-		$points[$i] = _GUICtrlListBox_GetText($LST_HUNTING_POINTS, $i)
-	Next
-	Return $points
+Func get_cords_in_loop()
+	GUICtrlSetState($BTN_GET_CORDS_IN_LOOP, $GUI_DISABLE)
+	GUICtrlSetState($BTN_GET_CORDS_IN_LOOP_STOP, $GUI_ENABLE)
+	Local $continueLoop = True
+	While $continueLoop
+		capture_entire_window($scriptTempDir, "\cords_from_loop.tiff")
+		process_image($scriptTempDir & "\cords_from_loop.tiff", $scriptTempDir & "\cords_from_loop_cropped.tiff", 69, 1798, 0, 1060)
+		;~ ToolTip("X: " & $currentXpos & " Y: " & $currentYpos)
+		For $i = 0 To 20 Step +1
+			Sleep(10)
+			Local $msg = GUIGetMsg()
+			Switch $msg
+				Case $BTN_GET_CORDS_IN_LOOP_STOP
+					$continueLoop = False
+					ExitLoop
+			EndSwitch
+		Next
+	WEnd
+	GUICtrlSetState($BTN_GET_CORDS_IN_LOOP, $GUI_ENABLE)
+	GUICtrlSetState($BTN_GET_CORDS_IN_LOOP_STOP, $GUI_DISABLE)
 EndFunc
 
 Func get_window_handles()
@@ -127,10 +156,16 @@ Func get_window_handles()
 	$hWnd = $hwndArray[0]
 	$hWndControl = $hwndArray[1]
 
+	Local $clientSize = WinGetClientSize($hWnd)
+	$clientWidth = $clientSize[0]
+	$clientHeight = $clientSize[1]
+
 	MsgBox($MB_ICONINFORMATION, "Success!", _
 		"Handles has been set. " & @CRLF & _
 		"hWnd = " & $hWnd & @CRLF & _
-		"hWndControl = " & $hWndControl _
+		"hWndControl = " & $hWndControl & @CRLF & _
+		"Window Width = " & $clientWidth & @CRLF & _
+		"Window Height = " & $clientHeight _
 	)
 
 	GUICtrlSetState($BTN_START_HUNTING, $GUI_ENABLE)
@@ -139,14 +174,9 @@ Func get_window_handles()
 	GUICtrlSetState($BTN_ADD_POINT_AUTO, $GUI_ENABLE)
 EndFunc
 
-Func start_hunt()
-
-EndFunc
-
 Func load_points_from_file()
 	Local Const $message = "Open text file with points"
-	Local Const $path = @ScriptDir & "\saved"
-	Local $fileOpenDialogResult = FileOpenDialog($message, $path, "Text (*.txt)", $FD_FILEMUSTEXIST)
+	Local $fileOpenDialogResult = FileOpenDialog($message, $scriptSaveDir, "Text (*.txt)", $FD_FILEMUSTEXIST)
 	If @error Then
 		MsgBox($MB_ICONERROR, "No file selected", "No file has been chosen points are not changed.")
 	Else
@@ -154,6 +184,68 @@ Func load_points_from_file()
 	EndIf
 	; Change the working directory (@WorkingDir) back to the location of the script directory as FileOpenDialog sets it to the last accessed folder.
 	FileChangeDir(@ScriptDir)
+EndFunc
+
+Func roll_new_instance_name()
+	$result = ""
+	Dim $space[3]
+	$digits = 8
+	For $i = 1 To $digits
+		$space[0] = Chr(Random(65, 90, 1)) ;A-Z
+		$space[1] = Chr(Random(97, 122, 1)) ;a-z
+		$space[2] = Chr(Random(48, 57, 1)) ;0-9
+		$result &= $space[Random(0, 2, 1)]
+	Next
+	GUICtrlSetData($INPUT_CLIENT_INSTANCE, $result)
+	Return $result 
+EndFunc
+
+Func save_configuration()
+	Local $pointsCount = _GUICtrlListBox_GetCount($LST_HUNTING_POINTS)
+	Local $pointsToSave = obtain_points_from_lst_ctrl()
+	Local Const $filePath = $scriptSaveDir & "\points.txt"
+	Local $hFileOpen = FileOpen($filePath, $FO_OVERWRITE)
+	For $point In $pointsToSave
+		FileWriteLine($filePath, $point)
+	Next
+	FileClose($filePath)
+
+	MsgBox($MB_TASKMODAL, "Saved", "Configuration saved")
+EndFunc
+
+Func load_configuration()
+EndFunc
+
+Func add_point_manually()
+EndFunc
+
+Func add_point_automatically()
+EndFunc
+
+Func delete_point()
+	_GUICtrlListBox_DeleteString($LST_HUNTING_POINTS, _GUICtrlListBox_GetCaretIndex($LST_HUNTING_POINTS))
+EndFunc
+
+Func edit_point()
+	Local $selectedItemIndex = _GUICtrlListBox_GetCurSel($LST_HUNTING_POINTS)
+	If ($selectedItemIndex == -1) Then
+		MsgBox($MB_ICONINFORMATION, "No point selected", "Select point from list to modify it")
+		Return
+	EndIf
+	Local $currentValue = _GUICtrlListBox_GetText($LST_HUNTING_POINTS, $selectedItemIndex)
+	Local $newValue = InputBox("Change cords", "Enter value as xxx,xxx example: 555,555", $currentValue)
+	_GUICtrlListBox_BeginUpdate($LST_HUNTING_POINTS)
+	_GUICtrlListBox_ReplaceString($LST_HUNTING_POINTS, $selectedItemIndex, $newValue)
+	_GUICtrlListBox_EndUpdate($LST_HUNTING_POINTS)
+EndFunc
+
+Func obtain_points_from_lst_ctrl()
+	Local $pointsCount = _GUICtrlListBox_GetCount($LST_HUNTING_POINTS)
+	Local $points[$pointsCount]
+	For $i = 0 To $pointsCount-1 Step +1
+		$points[$i] = _GUICtrlListBox_GetText($LST_HUNTING_POINTS, $i)
+	Next
+	Return $points
 EndFunc
 
 ; if save button pressed return array[0] = hWnd array[1] = hControlWnd, otheriwse $array[2] = [0,0]
@@ -254,4 +346,82 @@ EndFunc
 Func clean_exit()
 	ToolTip("")
 	Exit
+EndFunc
+
+;-----------------------------------------------
+; Functions that are not directly connected with GUI
+;-----------------------------------------------
+
+Func initialize()
+	$instanceName = roll_new_instance_name()
+	$scriptTempDir = @ScriptDir & "\temp\" & $instanceName 
+	$scriptSaveDir = @ScriptDir & "\saved\" & $instanceName
+	If Not FileExists($scriptTempDir) Then
+		DirCreate($scriptTempDir)
+	EndIf
+
+	If Not FileExists($scriptSaveDir) Then
+		DirCreate($scriptSaveDir)
+	EndIf
+
+EndFunc
+
+Func capture_entire_window($imageOutPath, $imageOutName)
+	Local $hDC_Capture = _WinAPI_GetDC($hWnd)
+	Local $hMemDC = _WinAPI_CreateCompatibleDC($hDC_Capture)
+	Local $hBitmap = _WinAPI_CreateCompatibleBitmap($hDC_Capture, $clientWidth, $clientHeight)
+	_WinAPI_SelectObject($hMemDC, $hBitmap)
+	_WinAPI_PrintWindow($hWnd, $hMemDC)
+	_WinAPI_SaveHBITMAPToFile($imageOutPath & $imageOutName, $hBitmap)
+EndFunc
+
+#cs Function process image as follows:
+- crop 
+- set text color to white
+- remove background 
+- set background color to black
+#ce
+Func process_image($imageFilePathOld, $imageFilePathNew, $cropLeft, $cropRight, $cropTop = 0, $cropBottom = 0)
+
+	_GDIPlus_Startup()
+
+	; crop image
+	Local $hImage = _GDIPlus_BitmapCreateFromFile($imageFilePathOld)
+	Local $iX = _GDIPlus_ImageGetWidth($hImage)
+	Local $iY = _GDIPlus_ImageGetHeight($hImage)
+	Local $hImageCropped = _GDIPlus_BitmapCloneArea($hImage, $cropLeft, $cropTop, $iX-$cropLeft-$cropRight, $iY-$cropTop-$cropBottom, $GDIP_PXF32ARGB)
+
+	; set text color to white
+    Local $hGraphics = _GDIPlus_ImageGetGraphicsContext($hImageCropped)
+	Local $aRemapTable[3][2]
+    $aRemapTable[0][0] = 2
+    $aRemapTable[1][0] = 0xFF7F7F7F ;Old Color - letters shadow
+    $aRemapTable[1][1] = 0xFF000000 ;New Color - letters shadow deleted
+    $aRemapTable[2][0] = 0xFFFFFF00 ;Old Color - letters color (yellow)
+    $aRemapTable[2][1] = 0xFFFFFFFF ;New Color - letter color (white)
+	Local $hIA = _GDIPlus_ImageAttributesCreate()
+    _GDIPlus_ImageAttributesSetRemapTable($hIA, $aRemapTable)
+	_GDIPlus_GraphicsDrawImageRectRect($hGraphics, $hImageCropped, 0, 0, $iX, $iY, 0, 0, $iX, $iY, $hIA)
+	
+	Local $iWidth = _GDIPlus_ImageGetWidth($hImageCropped)
+	Local $iHeight = _GDIPlus_ImageGetHeight($hImageCropped)
+	Local $tLock = _GDIPlus_BitmapLockBits($hImageCropped, 0, 0, $iWidth, $iHeight,  BitOR($GDIP_ILMWRITE, $GDIP_ILMREAD), $GDIP_PXF32ARGB)
+	Local $tPixel = DllStructCreate("int color[" & $iWidth * $iHeight & "];", $tLock.scan0)
+
+	; set background color to black
+	For $i = 1 To $iWidth * $iHeight
+	  If $tPixel.color(($i)) <> 0xFFFFFFFF Then $tPixel.color(($i)) = 0xFF000000
+	Next
+	
+	;save
+	_GDIPlus_BitmapUnlockBits($hImageCropped, $tPixel)
+	_GDIPlus_ImageSaveToFile($hImageCropped, $imageFilePathNew)
+
+	;clean handles etc
+	_GDIPlus_ImageAttributesDispose($hIA)
+    _GDIPlus_ImageDispose($hImageCropped)
+	_GDIPlus_GraphicsDispose($hGraphics)
+	_GDIPlus_ImageDispose($hImage)
+    _GDIPlus_Shutdown()
+	
 EndFunc
