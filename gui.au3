@@ -5,7 +5,7 @@
 #include <StaticConstants.au3>
 #include <WindowsConstants.au3>
 #Region ### START Koda GUI section ### Form=C:\Users\danie\Desktop\au3\bot\Form1.kxf
-$GUI_BOT = GUICreate("Hunting Bot", 594, 445, -1, -1)
+$GUI_BOT = GUICreate("Hunting Bot", 615, 445, -1, -1)
 GUISetBkColor(0xFFFBF0)
 $GROUP_HUNTING = GUICtrlCreateGroup("Hunting Points", 320, 8, 249, 385, BitOR($GUI_SS_DEFAULT_GROUP,$BS_CENTER), $WS_EX_TRANSPARENT)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
@@ -19,7 +19,7 @@ $BTN_GET_CORDS_IN_LOOP = GUICtrlCreateButton("Get cords in loop", 24, 96, 137, 3
 GUICtrlSetState(-1, $GUI_DISABLE)
 $BTN_GET_HANDLES = GUICtrlCreateButton("Get window handles", 24, 136, 139, 33)
 $LST_HUNTING_POINTS = GUICtrlCreateList("", 336, 35, 89, 344)
-GUICtrlSetData(-1, "626,831|627,674|632,582|654,777|700,555|897,564")
+GUICtrlSetData(-1, "641,797|628,555|764,698|784,648|665,554|897,565")
 GUICtrlSetBkColor(-1, 0xFFFFFF)
 $BTN_DELETE_POINT = GUICtrlCreateButton("Delete Point", 440, 104, 107, 25)
 $BTN_EDIT_POINT = GUICtrlCreateButton("Edit Point", 440, 136, 107, 25)
@@ -40,6 +40,7 @@ $INPUT_CLIENT_INSTANCE = GUICtrlCreateInput("", 16, 312, 137, 21)
 GUICtrlSetState(-1, $GUI_DISABLE)
 $BTN_ROLL_INSTANCE_NAME = GUICtrlCreateButton("Change instance name", 168, 312, 129, 25)
 $LBL_BOT_INSTANCE_NAME = GUICtrlCreateLabel("Bot instance name:", 16, 288, 95, 17)
+$LABEL_HWND_INFO = GUICtrlCreateLabel(" hWnd info", 26, 176, 246, 104, -1, $WS_EX_CLIENTEDGE)
 GUISetState(@SW_SHOW)
 #EndRegion ### END Koda GUI section ###
 
@@ -66,17 +67,29 @@ GUISetState(@SW_SHOW)
 GUISetIcon(@ScriptDir & "\bot.ico")
 TraySetIcon(@ScriptDir & "\bot.ico")
 
+Global $randomSleepArraySize = 15
+Global $randomJumpFrequency = 5
 Global $instanceName = ""
 Global $scriptTempDir = ""
 Global $scriptSaveDir = ""
 Global $pointsToGo[0]
 Global $isInBotCheck = False
-initialize()
+
+; cords in hWndControl for 1920x1080 TODO: make it generic
+Global $iCenterPosX = 960
+Global $iCenterPosY = 540
+
+; is being use to perform a real click from time to time to prevent bot jail
+$jumpCounter = 0
+$realJumpFrequency = 50
 
 Global $hWnd = 0
 Global $hWndControl = 0
 Global $clientWidth = 0
 Global $clientHeight = 0
+Global $windowAbsolutePosition = 0
+
+initialize()
 
 While 1
 	$msg = GUIGetMsg()
@@ -117,12 +130,225 @@ WEnd
 Func start_hunt()
 	GUICtrlSetState($BTN_START_HUNTING, $GUI_DISABLE)
 	GUICtrlSetState($BTN_STOP_HUNTING, $GUI_ENABLE)
+	If ($isInBotCheck) Then
+		Return
+	EndIf
+	Local $pointsIterator = 0
+	Local $sleepArrayIterator = 0
+	Local $lastSleepArray[$randomSleepArraySize]
+	Local $randomJumpCurrentIt = 0
+	Local $continueLoop = True
+	While $continueLoop
+		; prepare random sleep time
+		Local $currentSleep = Random(5, 20, 1) * 10
+		While _ArraySearch($lastSleepArray, $currentSleep) <> -1
+			$currentSleep = Random(5, 20, 1) * 20
+		WEnd
+		$lastSleepArray[$sleepArrayIterator] = $currentSleep
+		$sleepArrayIterator = Mod($sleepArrayIterator + 1, $randomSleepArraySize)
+
+		; get cords
+		capture_entire_window($scriptTempDir, "\cords_from_hunting.tiff")
+		process_image($scriptTempDir & "\cords_from_hunting.tiff", $scriptTempDir & "\cords_from_hunting_cropped.tiff", 68, 1770, 0, 1060)
+		run_tesseract($scriptTempDir & "\cords_from_hunting", $scriptTempDir & "\cords_from_hunting_cropped.tiff")
+
+		; sleep 200 for tesseract processing; check for button stop in the meantime
+		For $i = 0 To 20 Step +1
+			Sleep(10)
+			Local $msg = GUIGetMsg()
+			Switch $msg
+				Case $BTN_STOP_HUNTING
+					$continueLoop = False
+			EndSwitch
+		Next
+
+		; read tesseract output
+		Local $currentPointRaw = read_file_content($scriptTempDir & "\cords_from_hunting.txt")
+		If ($currentPointRaw == -1) Then
+			ToolTip("Reading cords failed")
+			random_jump($currentSleep)
+			ContinueLoop
+		EndIf
+
+		; clean tesseract junk
+		Local $pointCleaned = StringReplace($currentPointRaw[0], ".", "")
+		$pointCleaned = StringReplace($pointCleaned, @LF, "")
+
+		; check if tesseract output is in good format
+		If StringLen($pointCleaned) == 6 Then
+			$currentXpos = Number(StringLeft($pointCleaned, 3))
+			$currentYpos = Number(StringRight($pointCleaned, 3))
+		EndIf
+
+		ConsoleWrite("Current pos X: " & $currentXpos & " Current pos Y: " & $currentYpos & @CRLF)
+		
+		If $currentXpos == 51 And $currentYpos == 51 Then
+			close_npc_message_box()
+			type_validation_code()
+			Sleep(500)
+		EndIf
+		
+		; try to turn on cyclone
+		ControlClick($hWnd, "", "XP2", "left")
+		Sleep($currentSleep)
+
+		; perform random jump if needed
+		$randomJumpCurrentIt = Mod($randomJumpCurrentIt + 1, $randomJumpFrequency)
+		If($randomJumpCurrentIt == 0) Then
+			random_jump($currentSleep)
+			ContinueLoop
+		EndIf
+		
+		; get jump + scatter points from array
+		Local $goToPointX = ($pointsToGo[$pointsIterator])[0]
+		Local $goToPointY = ($pointsToGo[$pointsIterator])[1]
+
+		; straight jump
+		If($currentXpos - 8 > $goToPointX And $currentYpos - 8 > $goToPointY) Then
+			jump_up($currentSleep)
+			Sleep(Mod($currentSleep, 50))
+			scatter_up()
+			ConsoleWrite("jump_up" & @CRLF)
+		ElseIf($currentXpos + 8 < $goToPointX And $currentYpos + 8 < $goToPointY) Then
+			jump_down($currentSleep)
+			Sleep(Mod($currentSleep, 50))
+			scatter_down()
+			ConsoleWrite("jump_down" & @CRLF)
+		ElseIf($currentXpos - 8 > $goToPointX And $currentYpos + 8 < $goToPointY) Then
+			jump_left($currentSleep)
+			Sleep(Mod($currentSleep, 50))
+			scatter_left()
+			ConsoleWrite("jump_left" & @CRLF)
+		ElseIf($currentXpos + 8 < $goToPointX And $currentYpos - 8 > $goToPointY) Then
+			jump_right($currentSleep)
+			Sleep(Mod($currentSleep, 50))
+			scatter_right()
+			ConsoleWrite("jump_right" & @CRLF)
+		;diagonal jump
+		ElseIf ($currentXpos - 16 > $goToPointX) Then
+			jump_x_up($currentSleep)
+			Sleep(Mod($currentSleep, 50))
+			scatter_x_up()
+			ConsoleWrite("jump_x_up" & @CRLF)
+		ElseIf ($currentXpos + 16 < $goToPointX) Then
+			jump_x_down($currentSleep)
+			Sleep(Mod($currentSleep, 50))
+			scatter_x_down()
+			ConsoleWrite("jump_x_down" & @CRLF)
+		ElseIf ($currentYpos - 16 > $goToPointY) Then
+			jump_y_up($currentSleep)
+			Sleep(Mod($currentSleep, 50))
+			scatter_y_up()
+			ConsoleWrite("jump_y_up" & @CRLF)
+		ElseIf ($currentYpos + 16 < $goToPointY) Then
+			jump_y_down($currentSleep)
+			Sleep(Mod($currentSleep, 50))
+			scatter_y_down()
+			ConsoleWrite("jump_y_down" & @CRLF)
+		Else
+			ConsoleWrite("Change point!" & @CRLF)
+			$pointsIterator = Mod($pointsIterator + 1 , UBound($pointsToGo))
+		EndIf
+
+		ConsoleWrite("Going to point: " & $pointsIterator & " Cord X: " & $goToPointX & " Cord Y: " & $goToPointY & @CRLF)
+		Sleep($currentSleep)
+		For $i = 0 To 30 Step +1
+			Sleep(10)
+			Local $msg = GUIGetMsg()
+			Switch $msg
+				Case $BTN_STOP_HUNTING
+					$continueLoop = False
+			EndSwitch
+		Next
+	WEnd
 
 	GUICtrlSetState($BTN_START_HUNTING, $GUI_ENABLE)
 	GUICtrlSetState($BTN_STOP_HUNTING, $GUI_DISABLE)
 EndFunc
 
 Func type_validation_code()
+	$hOldWndActive = WinGetHandle("[active]")
+	close_npc_message_box()
+	$isInBotCheck = True
+	ConsoleWrite("AntyBot has been triggered!" & @CRLF)
+	Local $windowAbsolutePosition = WinGetPos($hWnd)
+
+	; put the window on top
+	AutoItSetOption("MouseClickDelay", 80)
+	WinSetOnTop($hWnd, "", $WINDOWS_ONTOP)
+	WinSetState($hWnd, "", @SW_SHOW)
+	WinActivate($hWnd)
+	_winapi_setActiveWindow($hwnd)
+
+	; click on NPC
+	MouseClick("left", $windowAbsolutePosition[0] + 1151, $windowAbsolutePosition[1] + 399, 1, 0)
+	Sleep(150)
+	#cs NPC click without mouse - WIP
+	Local $MK_CONTROL = 0x0008
+	Local $MK_LBUTTON = 0x0001
+	Local $lParam = _WinAPI_MakeLong($windowAbsolutePosition[0] + 1151, $windowAbsolutePosition[1] + 399)
+	_WinAPI_PostMessage($hWndControl, $WM_LBUTTONDOWN, $MK_CONTROL, $lParam)
+	Sleep(100)
+	$lParam = _WinAPI_MakeLong(1151 - 5,399 - 2)
+	_WinAPI_PostMessage($hWndControl, $WM_LBUTTONUP, $MK_CONTROL, $lParam)
+	#ce
+	
+	; capture entire screen
+	Capture_Entire_Window($hWnd, $scriptTempDir & "\entire_screen_anytbot.tiff")
+	Sleep(100)
+
+	; capture the code value
+	process_image($scriptTempDir & "\entire_screen_anytbot.tiff", $scriptTempDir & "\cropped_antybot.tiff", 878, 950, 60, 980)
+	Sleep(100)
+
+	; run tesseract to decode the value from image to text
+	run_tesseract($scriptTempDir & "\antybot_code", $scriptTempDir & "\cropped_antybot.tiff")
+	Sleep(200)
+	
+	; click on text field
+	MouseClick("left", $windowAbsolutePosition[0] + 784, $windowAbsolutePosition[1] + 126, 1, 10)
+	Sleep(150)
+
+	; open the file with code to put
+	Local $hFileOpen = FileOpen($scriptTempDir & "\antybot_code" & ".txt", $FO_READ)
+	If $hFileOpen = -1 Then
+			ToolTip("An error occurred when reading the file. File Path: " & $scriptTempDir & "\antybot_code" & ".txt", 30, 0)
+			Return
+	EndIf
+
+	; read text file and send value to input
+	Local $sOutput = FileRead($hFileOpen)
+	FileClose($hFileOpen)
+	Local $sOutputClean = StringReplace($sOutput, @LF, "")
+	ConsoleWrite("Verification code to be send: " & $sOutputClean & @CRLF)
+	Send($sOutputClean)
+	Sleep(200)
+
+	; click on OK button
+	MouseClick("left", $windowAbsolutePosition[0] + 859, $windowAbsolutePosition[1] + 129, 1, 10)
+	Sleep(200)
+
+	; click on NPC
+	MouseClick("left", $windowAbsolutePosition[0] + 1151, $windowAbsolutePosition[1] + 399, 1, 10)
+	Sleep(200)
+
+	; click on tp to the same place
+	MouseClick("left", $windowAbsolutePosition[0] + 1049, $windowAbsolutePosition[1] + 132, 1, 10)
+	Sleep(200)
+
+	; cleanup
+	WinSetOnTop($hWnd, "", $WINDOWS_NOONTOP)
+	AutoItSetOption("MouseClickDelay", 10)
+
+	; return PC to user - put old window as active
+	WinSetOnTop($hOldWndActive, "", $WINDOWS_ONTOP)
+	WinSetState($hOldWndActive, "", @SW_SHOW)
+	WinActivate($hOldWndActive)
+	_winapi_setActiveWindow($hOldWndActive)
+	WinSetOnTop($hOldWndActive, "", $WINDOWS_NOONTOP)
+
+	; change flag so other functions know character left anty bot
+	$iIsInBotCheck = False
 EndFunc
 
 Func get_cords_in_loop()
@@ -184,13 +410,13 @@ Func get_window_handles()
 	$clientWidth = $clientSize[0]
 	$clientHeight = $clientSize[1]
 
-	MsgBox($MB_ICONINFORMATION, "Success!", _
-		"Handles has been set. " & @CRLF & _
-		"hWnd = " & $hWnd & @CRLF & _
-		"hWndControl = " & $hWndControl & @CRLF & _
-		"Window Width = " & $clientWidth & @CRLF & _
-		"Window Height = " & $clientHeight _
-	)
+	GUICtrlSetData($LABEL_HWND_INFO, _
+	" hWnd = " & $hWnd & @CRLF & _
+	" hWndControl = " & $hWndControl & @CRLF & _
+	" Window Width = " & $clientWidth & @CRLF & _
+	" Window Height = " & $clientHeight)
+
+	$windowAbsolutePosition = WinGetPos($hWnd)
 
 	GUICtrlSetState($BTN_START_HUNTING, $GUI_ENABLE)
 	GUICtrlSetState($BTN_TYPE_VALIDATION_CODE, $GUI_ENABLE)
@@ -497,4 +723,142 @@ Func run_tesseract($ResultTextPath, $sImageFilePath)
 	Local $TesseractExePath = @ScriptDir & "\Tesseract-OCR\tesseract.exe"
 	Local $iPID = Run($TesseractExePath & " " &  $sImageFilePath & " " & $ResultTextPath &" nobatch digits" , "" , @SW_HIDE, $RUN_CREATE_NEW_CONSOLE)
 	StdioClose($iPID)
+EndFunc
+
+Func close_npc_message_box()
+	ControlClick($hWnd, "", "C")
+EndFunc
+
+Func random_jump($currentSleep)
+	jump(960 + Random(-231, 321, 1), 540 + Random(-130, 30, 1), $currentSleep)
+EndFunc
+
+; -8 on x; -8 on y
+Func jump_up($currentSleep)
+	jump(960 + Random(-15,15,1), 270 + Random(-15,15,1), $currentSleep)
+EndFunc
+
+; +8 on x; +8 on y
+Func jump_down($currentSleep)
+	jump(960 + Random(-15,15,1), 810 + Random(-15,15,1), $currentSleep)
+EndFunc
+
+; -7 on x; +8/+7 on y
+Func jump_left($currentSleep)
+	jump(480, 540, $currentSleep)
+EndFunc
+
+; +8 on x; -8 on y
+Func jump_right($currentSleep)
+	jump(1440, 540, $currentSleep)
+EndFunc
+
+; -16 on y cord
+Func jump_y_up($currentSleep)
+	jump($iCenterPosX + 480 + Random(-45,0,1), $iCenterPosY - 270 + Random(0,45,1), $currentSleep)
+EndFunc
+
+; +16 on y cord
+Func jump_y_down($currentSleep)
+	jump($iCenterPosX - 480 + Random(0,45,1), $iCenterPosY + 270 + Random(-45,0,1), $currentSleep)
+EndFunc
+
+; -16 on x cord
+Func jump_x_up($currentSleep)
+	jump($iCenterPosX - 480 + Random(0,45,1), $iCenterPosY - 270 + Random(0,45,1), $currentSleep)
+EndFunc
+
+; +16 on x cord
+Func jump_x_down($currentSleep)
+	jump($iCenterPosX + 480 + Random(-45,0,1), $iCenterPosY + 270 + Random(-45,0,1), $currentSleep)
+EndFunc
+
+Func scatter_up()
+	scatter(960, 270)
+EndFunc
+
+Func scatter_down()
+	scatter(960, 810)
+EndFunc
+
+Func scatter_left()
+	scatter(480, 540)
+EndFunc
+
+Func scatter_right()
+	scatter(1440, 540)
+EndFunc
+
+Func scatter_y_up()
+	scatter($iCenterPosX + 480, $iCenterPosY - 270)
+EndFunc
+
+Func scatter_y_down()
+	scatter($iCenterPosX - 480, $iCenterPosY + 270)
+EndFunc
+
+Func scatter_x_up()
+	scatter($iCenterPosX - 480, $iCenterPosY - 270)
+EndFunc
+
+Func scatter_x_down()
+	scatter($iCenterPosX + 480, $iCenterPosY)
+EndFunc
+
+Func random_scatter()
+	scatter($iCenterPosX + Random(-50, 50, 1), $iCenterPosY + Random(-50, 50, 1))
+EndFunc
+
+; jump with anty bot protection in mind, will perform real click from time to time
+Func jump($xCordClick, $yCordClick, $currentSleep)
+	$jumpCounter += 1
+	Sleep($currentSleep)
+	$currentClickCountCycle = Mod($jumpCounter, $realJumpFrequency)
+	If($currentClickCountCycle > $realJumpFrequency - 4 ) Then
+		ToolTip("Mouse will be taken in: " & $realJumpFrequency - $currentClickCountCycle)
+	EndIf
+
+	; anty bot jail protection
+	If ($currentClickCountCycle == 0) Then
+		Local $hOldWndActive = WinGetHandle("[active]")
+		Local $oldMousePos = MouseGetPos()
+		ToolTip("Mouse will be taken in: 0")
+		Sleep(80)
+		
+		; put game on top and perform real click
+		WinSetOnTop($hWnd, "", $WINDOWS_ONTOP)
+		MouseClick($MOUSE_CLICK_LEFT, $windowAbsolutePosition[0] + 1151, $windowAbsolutePosition[1] + 399, 1, 10)
+		ConsoleWrite("REAL CLICK AT: " & $jumpCounter & @CRLF)
+		WinSetOnTop($hWnd, "", $WINDOWS_NOONTOP)
+
+		; return PC to user - put old window as active
+		MouseMove($oldMousePos[0], $oldMousePos[1], 10)
+		WinSetOnTop($hOldWndActive, "", $WINDOWS_ONTOP)
+		WinSetState($hOldWndActive, "", @SW_SHOW)
+		WinActivate($hOldWndActive)
+		_winapi_setActiveWindow($hOldWndActive)
+		WinSetOnTop($hOldWndActive, "", $WINDOWS_NOONTOP)
+
+		; cleanup
+		ToolTip("")
+		Return
+	EndIf
+	
+	; perform control click
+	Local $MK_CONTROL = 0x0008
+	Local $MK_LBUTTON = 0x0001
+	Local $lParam = _WinAPI_MakeLong($xCordClick, $yCordClick)
+	
+	_WinAPI_PostMessage($hWndControl, $WM_LBUTTONDOWN, $MK_CONTROL, $lParam)
+	Sleep($currentSleep)
+	$lParam = _WinAPI_MakeLong($currentSleep - 20, $currentSleep - 20)
+	_WinAPI_PostMessage($hWndControl, $WM_LBUTTONUP, $MK_CONTROL, $lParam)
+EndFunc
+
+Func scatter($xCordClick, $yCordClick)
+	Local $wParam = 0x0008 ; hold ctrl
+	Local $lParam = _WinAPI_MakeLong($xCordClick, $yCordClick)
+	_SendMessage($hWndControl, $WM_RBUTTONDOWN, $wParam , $lParam)
+	Sleep(Random(30, 80, 1))
+	_SendMessage($hWndControl, $WM_RBUTTONUP, $wParam , $lParam)
 EndFunc
