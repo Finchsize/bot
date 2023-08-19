@@ -7,28 +7,29 @@
 #Region ### START Koda GUI section ### Form=C:\Users\danie\Desktop\au3\bot\Form1.kxf
 $SimpleGUI_1 = GUICreate("Hunting Bot", 583, 445, -1, -1)
 GUISetBkColor(0xFFFBF0)
-$BTN_TYPE_VALIDATION_CODE = GUICtrlCreateButton("Auto type validation code", 24, 48, 139, 33)
+$BTN_TYPE_VALIDATION_CODE = GUICtrlCreateButton("Auto type validation code", 24, 56, 139, 33)
 GUICtrlSetState(-1, $GUI_DISABLE)
-$BTN_START_HUNTING = GUICtrlCreateButton("Start hunting", 24, 8, 137, 33)
+$BTN_START_HUNTING = GUICtrlCreateButton("Start hunting", 24, 16, 137, 33)
 GUICtrlSetState(-1, $GUI_DISABLE)
 $BTN_EXIT = GUICtrlCreateButton("Exit", 488, 400, 75, 25)
-$BTN_GET_CORDS_IN_LOOP = GUICtrlCreateButton("Get cords in loop", 24, 88, 137, 33)
+$BTN_GET_CORDS_IN_LOOP = GUICtrlCreateButton("Get cords in loop", 24, 96, 137, 33)
 GUICtrlSetState(-1, $GUI_DISABLE)
-$BTN_GET_WINDOW_HANDLES = GUICtrlCreateButton("Get window handles", 24, 128, 139, 33)
-$BTN_CUSTOM_MOVE_POINTS = GUICtrlCreateButton("Custom move points", 24, 168, 139, 33)
-GUICtrlSetState(-1, $GUI_DISABLE)
-$LST_HUNTING_POINTS = GUICtrlCreateList("", 216, 24, 89, 344)
+$BTN_GET_WINDOW_HANDLES = GUICtrlCreateButton("Get window handles", 24, 136, 139, 33)
+$LST_HUNTING_POINTS = GUICtrlCreateList("", 336, 24, 89, 344)
 GUICtrlSetData(-1, "626,831|627,674|632,582|654,777|700,555|897,564")
 GUICtrlSetBkColor(-1, 0xFFFFFF)
-$LABEL_HUNTING_POINTS = GUICtrlCreateLabel("Hunting points", 216, 8, 72, 17)
-$BTN_DELETE_POINT = GUICtrlCreateButton("Delete Point", 320, 72, 83, 25)
-$BTN_EDIT_POINT = GUICtrlCreateButton("Edit Point", 320, 104, 83, 25)
-$BTN_LOAD_FROM_FILE = GUICtrlCreateButton("Load from file", 320, 136, 83, 25)
+$LABEL_HUNTING_POINTS = GUICtrlCreateLabel("Hunting points", 336, 8, 72, 17)
+$BTN_DELETE_POINT = GUICtrlCreateButton("Delete Point", 440, 88, 107, 25)
+$BTN_EDIT_POINT = GUICtrlCreateButton("Edit Point", 440, 120, 107, 25)
+$BTN_LOAD_FROM_FILE = GUICtrlCreateButton("Load from file", 440, 152, 107, 25)
 $BTN_GAME_WINDOWS = GUICtrlCreateButton("Show open game windows", 16, 408, 139, 25)
 $INPUT_GAME_NAME = GUICtrlCreateInput("Conquer", 232, 408, 139, 21)
 $LABEL_CLIENT_NAME = GUICtrlCreateLabel("Client name", 160, 414, 59, 17)
-$BTN_SAVE_CONFIGURATION = GUICtrlCreateButton("Save configuration", 24, 240, 139, 25)
-$BTN_LOAD_CONFIGURATION = GUICtrlCreateButton("Load configuration", 24, 272, 139, 25)
+$BTN_SAVE_CONFIGURATION = GUICtrlCreateButton("Save configuration", 16, 344, 139, 25)
+$BTN_LOAD_CONFIGURATION = GUICtrlCreateButton("Load configuration", 16, 376, 139, 25)
+$BTN_ADD_POINT = GUICtrlCreateButton("Add Point", 440, 24, 107, 25)
+$BTN_ADD_POINT_AUTO = GUICtrlCreateButton("Add Point - AUTO", 440, 56, 107, 25)
+GUICtrlSetState(-1, $GUI_DISABLE)
 GUISetState(@SW_SHOW)
 #EndRegion ### END Koda GUI section ###
 
@@ -208,15 +209,16 @@ EndFunc
 Func show_game_instances()
 	Local $windowsList = WinList("[REGEXPTITLE:(?i)(.*" & GUICtrlRead($INPUT_GAME_NAME) & ".*)]")
 	Local $hUserFunction = save_hwnd_from_array_display
-	_DebugArrayDisplay($windowsList, "Select", "1:", $ARRAYDISPLAY_NOROW, "|", "Client Title|Hwnd", 1000, $hUserFunction)
+	_DebugArrayDisplay($windowsList, "Select", "1:", BitOR($ARRAYDISPLAY_NOROW, $ARRAYDISPLAY_COLALIGNLEFT), "|", "Client Title|Hwnd", 1000, $hUserFunction)
 EndFunc
 
 Func save_hwnd_from_array_display($aArray_2D, $aSelected)
 	If ($aSelected[0] == 0) Then
 		MsgBox($MB_ICONERROR, "Error", "No row selected." & @CRLF & "Row must be selected!")
-		Return
+		Return 0
 	EndIf
 	Local $selectedIndex = $aSelected[1] - 1
 	Local $selectedHwnd = $aArray_2D[$selectedIndex][1]
 	MsgBox($MB_TASKMODAL, "Selected", "Selected hWnd: " & $selectedHwnd)
+	Return 0
 EndFunc

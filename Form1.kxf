@@ -34,7 +34,7 @@
 		<object type="TAButton" name="BTN_TYPE_VALIDATION_CODE">
 			<properties>
 				<property name="Left" vt="Int8">24</property>
-				<property name="Top" vt="Int8">48</property>
+				<property name="Top" vt="Int8">56</property>
 				<property name="Width" vt="Int16">139</property>
 				<property name="Height" vt="Int8">33</property>
 				<property name="Caption" vt="String">Auto type validation code</property>
@@ -50,7 +50,7 @@
 		<object type="TAButton" name="BTN_START_HUNTING">
 			<properties>
 				<property name="Left" vt="Int8">24</property>
-				<property name="Top" vt="Int8">8</property>
+				<property name="Top" vt="Int8">16</property>
 				<property name="Width" vt="Int16">137</property>
 				<property name="Height" vt="Int8">33</property>
 				<property name="Caption" vt="String">Start hunting</property>
@@ -81,7 +81,7 @@
 		<object type="TAButton" name="BTN_GET_CORDS_IN_LOOP">
 			<properties>
 				<property name="Left" vt="Int8">24</property>
-				<property name="Top" vt="Int8">88</property>
+				<property name="Top" vt="Int8">96</property>
 				<property name="Width" vt="Int16">137</property>
 				<property name="Height" vt="Int8">33</property>
 				<property name="Caption" vt="String">Get cords in loop</property>
@@ -97,7 +97,7 @@
 		<object type="TAButton" name="BTN_GET_WINDOW_HANDLES">
 			<properties>
 				<property name="Left" vt="Int8">24</property>
-				<property name="Top" vt="Int16">128</property>
+				<property name="Top" vt="Int16">136</property>
 				<property name="Width" vt="Int16">139</property>
 				<property name="Height" vt="Int8">33</property>
 				<property name="Caption" vt="String">Get window handles</property>
@@ -109,25 +109,9 @@
 			</properties>
 			<components/>
 		</object>
-		<object type="TAButton" name="BTN_CUSTOM_MOVE_POINTS">
-			<properties>
-				<property name="Left" vt="Int8">24</property>
-				<property name="Top" vt="Int16">168</property>
-				<property name="Width" vt="Int16">139</property>
-				<property name="Height" vt="Int8">33</property>
-				<property name="Caption" vt="String">Custom move points</property>
-				<property name="Enabled" vt="False">False</property>
-				<property name="TabOrder" vt="Int8">5</property>
-				<property name="Color" vt="Ident">clBtnFace</property>
-				<property name="CtrlStyle" vt="Int32">1342373888</property>
-				<property name="CtrlExStyle" vt="Int8">0</property>
-				<property name="Resizing" vt="Set">DockWidth, DockHeight</property>
-			</properties>
-			<components/>
-		</object>
 		<object type="TAList" name="LST_HUNTING_POINTS">
 			<properties>
-				<property name="Left" vt="Int16">216</property>
+				<property name="Left" vt="Int16">336</property>
 				<property name="Top" vt="Int8">24</property>
 				<property name="Width" vt="Int8">89</property>
 				<property name="Height" vt="Int16">344</property>
@@ -135,15 +119,15 @@
 				<property name="ItemHeight" vt="Int8">13</property>
 				<property name="Items.Strings" vt="List">
 					<list>
-						<li vt="String">626, 831</li>
-						<li vt="String">627, 674</li>
-						<li vt="String">632, 582</li>
-						<li vt="String">654, 777</li>
-						<li vt="String">700, 555</li>
-						<li vt="String">897, 564</li>
+						<li vt="String">626,831</li>
+						<li vt="String">627,674</li>
+						<li vt="String">632,582</li>
+						<li vt="String">654,777</li>
+						<li vt="String">700,555</li>
+						<li vt="String">897,564</li>
 					</list>
 				</property>
-				<property name="TabOrder" vt="Int8">6</property>
+				<property name="TabOrder" vt="Int8">5</property>
 				<property name="CtrlStyle" vt="Int32">1352859651</property>
 				<property name="CtrlExStyle" vt="Int16">512</property>
 				<property name="Resizing" vt="Set"/>
@@ -152,12 +136,12 @@
 		</object>
 		<object type="TALabel" name="LABEL_HUNTING_POINTS">
 			<properties>
-				<property name="Left" vt="Int16">216</property>
+				<property name="Left" vt="Int16">336</property>
 				<property name="Top" vt="Int8">8</property>
 				<property name="Width" vt="Int8">72</property>
 				<property name="Height" vt="Int8">17</property>
 				<property name="Caption" vt="String">Hunting points</property>
-				<property name="TabOrder" vt="Int8">7</property>
+				<property name="TabOrder" vt="Int8">6</property>
 				<property name="HaveVariable" vt="False">False</property>
 				<property name="CtrlStyle" vt="Int32">1342308608</property>
 				<property name="CtrlExStyle" vt="Int8">0</property>
@@ -167,12 +151,12 @@
 		</object>
 		<object type="TAButton" name="BTN_DELETE_POINT">
 			<properties>
-				<property name="Left" vt="Int16">320</property>
-				<property name="Top" vt="Int8">72</property>
-				<property name="Width" vt="Int8">83</property>
+				<property name="Left" vt="Int16">440</property>
+				<property name="Top" vt="Int8">88</property>
+				<property name="Width" vt="Int8">107</property>
 				<property name="Height" vt="Int8">25</property>
 				<property name="Caption" vt="String">Delete Point</property>
-				<property name="TabOrder" vt="Int8">8</property>
+				<property name="TabOrder" vt="Int8">7</property>
 				<property name="Color" vt="Ident">clBtnFace</property>
 				<property name="CtrlStyle" vt="Int32">1342373888</property>
 				<property name="CtrlExStyle" vt="Int8">0</property>
@@ -182,12 +166,12 @@
 		</object>
 		<object type="TAButton" name="BTN_EDIT_POINT">
 			<properties>
-				<property name="Left" vt="Int16">320</property>
-				<property name="Top" vt="Int8">104</property>
-				<property name="Width" vt="Int8">83</property>
+				<property name="Left" vt="Int16">440</property>
+				<property name="Top" vt="Int8">120</property>
+				<property name="Width" vt="Int8">107</property>
 				<property name="Height" vt="Int8">25</property>
 				<property name="Caption" vt="String">Edit Point</property>
-				<property name="TabOrder" vt="Int8">9</property>
+				<property name="TabOrder" vt="Int8">8</property>
 				<property name="Color" vt="Ident">clBtnFace</property>
 				<property name="CtrlStyle" vt="Int32">1342373888</property>
 				<property name="CtrlExStyle" vt="Int8">0</property>
@@ -197,12 +181,12 @@
 		</object>
 		<object type="TAButton" name="BTN_LOAD_FROM_FILE">
 			<properties>
-				<property name="Left" vt="Int16">320</property>
-				<property name="Top" vt="Int16">136</property>
-				<property name="Width" vt="Int8">83</property>
+				<property name="Left" vt="Int16">440</property>
+				<property name="Top" vt="Int16">152</property>
+				<property name="Width" vt="Int8">107</property>
 				<property name="Height" vt="Int8">25</property>
 				<property name="Caption" vt="String">Load from file</property>
-				<property name="TabOrder" vt="Int8">10</property>
+				<property name="TabOrder" vt="Int8">9</property>
 				<property name="Color" vt="Ident">clBtnFace</property>
 				<property name="CtrlStyle" vt="Int32">1342373888</property>
 				<property name="CtrlExStyle" vt="Int8">0</property>
@@ -217,7 +201,7 @@
 				<property name="Width" vt="Int16">139</property>
 				<property name="Height" vt="Int8">25</property>
 				<property name="Caption" vt="String">Show open game windows</property>
-				<property name="TabOrder" vt="Int8">11</property>
+				<property name="TabOrder" vt="Int8">10</property>
 				<property name="Color" vt="Ident">clBtnFace</property>
 				<property name="CtrlStyle" vt="Int32">1342373888</property>
 				<property name="CtrlExStyle" vt="Int8">0</property>
@@ -231,7 +215,7 @@
 				<property name="Top" vt="Int16">408</property>
 				<property name="Width" vt="Int16">139</property>
 				<property name="Height" vt="Int8">21</property>
-				<property name="TabOrder" vt="Int8">12</property>
+				<property name="TabOrder" vt="Int8">11</property>
 				<property name="Text" vt="String">Conquer</property>
 				<property name="CtrlStyle" vt="Int32">1342374016</property>
 				<property name="CtrlExStyle" vt="Int16">512</property>
@@ -246,7 +230,7 @@
 				<property name="Width" vt="Int8">59</property>
 				<property name="Height" vt="Int8">17</property>
 				<property name="Caption" vt="String">Client name</property>
-				<property name="TabOrder" vt="Int8">13</property>
+				<property name="TabOrder" vt="Int8">12</property>
 				<property name="HaveVariable" vt="False">False</property>
 				<property name="CtrlStyle" vt="Int32">1342308608</property>
 				<property name="CtrlExStyle" vt="Int8">0</property>
@@ -256,12 +240,12 @@
 		</object>
 		<object type="TAButton" name="BTN_SAVE_CONFIGURATION">
 			<properties>
-				<property name="Left" vt="Int8">24</property>
-				<property name="Top" vt="Int16">240</property>
+				<property name="Left" vt="Int8">16</property>
+				<property name="Top" vt="Int16">344</property>
 				<property name="Width" vt="Int16">139</property>
 				<property name="Height" vt="Int8">25</property>
 				<property name="Caption" vt="String">Save configuration</property>
-				<property name="TabOrder" vt="Int8">14</property>
+				<property name="TabOrder" vt="Int8">13</property>
 				<property name="Color" vt="Ident">clBtnFace</property>
 				<property name="CtrlStyle" vt="Int32">1342373888</property>
 				<property name="CtrlExStyle" vt="Int8">0</property>
@@ -271,12 +255,43 @@
 		</object>
 		<object type="TAButton" name="BTN_LOAD_CONFIGURATION">
 			<properties>
-				<property name="Left" vt="Int8">24</property>
-				<property name="Top" vt="Int16">272</property>
+				<property name="Left" vt="Int8">16</property>
+				<property name="Top" vt="Int16">376</property>
 				<property name="Width" vt="Int16">139</property>
 				<property name="Height" vt="Int8">25</property>
 				<property name="Caption" vt="String">Load configuration</property>
+				<property name="TabOrder" vt="Int8">14</property>
+				<property name="Color" vt="Ident">clBtnFace</property>
+				<property name="CtrlStyle" vt="Int32">1342373888</property>
+				<property name="CtrlExStyle" vt="Int8">0</property>
+				<property name="Resizing" vt="Set">DockWidth, DockHeight</property>
+			</properties>
+			<components/>
+		</object>
+		<object type="TAButton" name="BTN_ADD_POINT">
+			<properties>
+				<property name="Left" vt="Int16">440</property>
+				<property name="Top" vt="Int8">24</property>
+				<property name="Width" vt="Int8">107</property>
+				<property name="Height" vt="Int8">25</property>
+				<property name="Caption" vt="String">Add Point</property>
 				<property name="TabOrder" vt="Int8">15</property>
+				<property name="Color" vt="Ident">clBtnFace</property>
+				<property name="CtrlStyle" vt="Int32">1342373888</property>
+				<property name="CtrlExStyle" vt="Int8">0</property>
+				<property name="Resizing" vt="Set">DockWidth, DockHeight</property>
+			</properties>
+			<components/>
+		</object>
+		<object type="TAButton" name="BTN_ADD_POINT_AUTO">
+			<properties>
+				<property name="Left" vt="Int16">440</property>
+				<property name="Top" vt="Int8">56</property>
+				<property name="Width" vt="Int8">107</property>
+				<property name="Height" vt="Int8">25</property>
+				<property name="Caption" vt="String">Add Point - AUTO</property>
+				<property name="Enabled" vt="False">False</property>
+				<property name="TabOrder" vt="Int8">16</property>
 				<property name="Color" vt="Ident">clBtnFace</property>
 				<property name="CtrlStyle" vt="Int32">1342373888</property>
 				<property name="CtrlExStyle" vt="Int8">0</property>
