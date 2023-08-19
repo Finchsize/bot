@@ -128,9 +128,9 @@
 		<object type="TAList" name="LST_HUNTING_POINTS">
 			<properties>
 				<property name="Left" vt="Int16">216</property>
-				<property name="Top" vt="Int8">72</property>
+				<property name="Top" vt="Int8">24</property>
 				<property name="Width" vt="Int8">89</property>
-				<property name="Height" vt="Int8">97</property>
+				<property name="Height" vt="Int16">344</property>
 				<property name="Color" vt="Ident">clWhite</property>
 				<property name="ItemHeight" vt="Int8">13</property>
 				<property name="Items.Strings" vt="List">
@@ -152,8 +152,8 @@
 		</object>
 		<object type="TALabel" name="LABEL_HUNTING_POINTS">
 			<properties>
-				<property name="Left" vt="Int16">224</property>
-				<property name="Top" vt="Int8">48</property>
+				<property name="Left" vt="Int16">216</property>
+				<property name="Top" vt="Int8">8</property>
 				<property name="Width" vt="Int8">72</property>
 				<property name="Height" vt="Int8">17</property>
 				<property name="Caption" vt="String">Hunting points</property>

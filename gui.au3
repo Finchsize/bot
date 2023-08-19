@@ -17,10 +17,10 @@ GUICtrlSetState(-1, $GUI_DISABLE)
 $BTN_GET_WINDOW_HANDLES = GUICtrlCreateButton("Get window handles", 24, 128, 139, 33)
 $BTN_CUSTOM_MOVE_POINTS = GUICtrlCreateButton("Custom move points", 24, 168, 139, 33)
 GUICtrlSetState(-1, $GUI_DISABLE)
-$LST_HUNTING_POINTS = GUICtrlCreateList("", 216, 72, 89, 97)
-GUICtrlSetData(-1, "626, 831|627, 674|632, 582|654, 777|700, 555|897, 564")
+$LST_HUNTING_POINTS = GUICtrlCreateList("", 216, 24, 89, 344)
+GUICtrlSetData(-1, "626,831|627,674|632,582|654,777|700,555|897,564")
 GUICtrlSetBkColor(-1, 0xFFFFFF)
-$LABEL_HUNTING_POINTS = GUICtrlCreateLabel("Hunting points", 224, 48, 72, 17)
+$LABEL_HUNTING_POINTS = GUICtrlCreateLabel("Hunting points", 216, 8, 72, 17)
 $BTN_DELETE_POINT = GUICtrlCreateButton("Delete Point", 320, 72, 83, 25)
 $BTN_EDIT_POINT = GUICtrlCreateButton("Edit Point", 320, 104, 83, 25)
 $BTN_LOAD_FROM_FILE = GUICtrlCreateButton("Load from file", 320, 136, 83, 25)
@@ -74,12 +74,23 @@ While 1
 		Case $BTN_SAVE_CONFIGURATION
 			save_configuration()
 		Case $BTN_DELETE_POINT
-			delete_point()	
+			delete_point()
+		Case $BTN_EDIT_POINT
+			edit_point()
 	EndSwitch
 WEnd
 
 Func delete_point()
 	_GUICtrlListBox_DeleteString($LST_HUNTING_POINTS, _GUICtrlListBox_GetCaretIndex($LST_HUNTING_POINTS))
+EndFunc
+
+Func edit_point()
+	Local $selectedItemIndex = _GUICtrlListBox_GetCurSel($LST_HUNTING_POINTS)
+	Local $currentValue = _GUICtrlListBox_GetText($LST_HUNTING_POINTS, $selectedItemIndex)
+	Local $newValue = InputBox("Change cords", "Enter value as xxx,xxx example: 555,555", $currentValue)
+	_GUICtrlListBox_BeginUpdate($LST_HUNTING_POINTS)
+	_GUICtrlListBox_ReplaceString($LST_HUNTING_POINTS, $selectedItemIndex, $newValue)
+	_GUICtrlListBox_EndUpdate($LST_HUNTING_POINTS)
 EndFunc
 
 Func save_configuration()
@@ -92,7 +103,7 @@ Func save_configuration()
 	Next
 	FileClose($filePath)
 
-	MsgBox($MB_SYSTEMMODAL, "Saved", "Configuration saved")
+	MsgBox($MB_TASKMODAL, "Saved", "Configuration saved")
 EndFunc
 
 Func obtain_points_from_lst_ctrl()
