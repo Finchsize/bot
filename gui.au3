@@ -61,9 +61,9 @@ While 1
 	$nMsg = GUIGetMsg()
 	Switch $nMsg
 		Case $GUI_EVENT_CLOSE
-			Exit
+			clean_exit()
 		Case $BTN_EXIT
-			Exit
+			clean_exit()
 		Case $BTN_LOAD_FROM_FILE
 			load_points_from_file()
 		Case $BTN_GAME_WINDOWS
@@ -117,7 +117,24 @@ Func obtain_points_from_lst_ctrl()
 EndFunc
 
 Func get_window_handles()
-	show_info_tooltip()
+	Local $hwndArray = show_info_tooltip()
+	If ($hwndArray[0] == 0) Then
+		MsgBox($MB_ICONERROR, "Error", "No window selected")
+		Return
+	EndIf
+	$hWnd = $hwndArray[0]
+	$hWndControl = $hwndArray[1]
+
+	MsgBox($MB_ICONINFORMATION, "Success!", _
+		"Handles has been set. " & @CRLF & _
+		"hWnd = " & $hWnd & @CRLF & _
+		"hWndControl = " & $hWndControl _
+	)
+
+	GUICtrlSetState($BTN_START_HUNTING, $GUI_ENABLE)
+	GUICtrlSetState($BTN_TYPE_VALIDATION_CODE, $GUI_ENABLE)
+	GUICtrlSetState($BTN_GET_CORDS_IN_LOOP, $GUI_ENABLE)
+	GUICtrlSetState($BTN_ADD_POINT_AUTO, $GUI_ENABLE)
 EndFunc
 
 Func start_hunt()
@@ -129,7 +146,7 @@ Func load_points_from_file()
 	Local Const $path = @ScriptDir & "\saved"
 	Local $fileOpenDialogResult = FileOpenDialog($message, $path, "Text (*.txt)", $FD_FILEMUSTEXIST)
 	If @error Then
-		MsgBox($MB_TASKMODAL, "No file selected", "No file has been chosen points are not changed.")
+		MsgBox($MB_ICONERROR, "No file selected", "No file has been chosen points are not changed.")
 	Else
 		MsgBox($MB_TASKMODAL, "", "Chosen file:" & @CRLF & $fileOpenDialogResult)
 	EndIf
@@ -137,10 +154,12 @@ Func load_points_from_file()
 	FileChangeDir(@ScriptDir)
 EndFunc
 
+; if save button pressed return array[0] = hWnd array[1] = hControlWnd, otheriwse $array[2] = [0,0]
 Func show_info_tooltip()
 	Local $qKeyPressed = "51"
 	Local $sKeyPressed = "53"
 	Local $continueLoop = True
+	Local $result[2] = [0,0]
 	While $continueLoop
 		AutoItSetOption("MouseCoordMode", 1) ; global position
 		Local $windowsInfo = get_window_info()
@@ -161,19 +180,26 @@ Func show_info_tooltip()
 			"Mouse Y Pos global = " & $globalMousePos[1] & @CRLF & _
 			"Mouse X Pos control = " & $relativeMousePos[0] & @CRLF & _
 			"Mouse Y Pos control = " & $relativeMousePos[1])
-		Sleep(50)
-		If _IsPressed($sKeyPressed) Then
-			$hWnd = $windowsInfo[0]
-			$hWndControl = $windowsInfo[1]
-			$continueLoop = False
-		ElseIf _IsPressed($qKeyPressed) Then
-			$continueLoop = False
-		EndIf
+		For $i = 0 To 30 Step +1
+			If _IsPressed($sKeyPressed) Then
+				$result[0] = $windowsInfo[0]
+				$result[1] = $windowsInfo[1]
+				$continueLoop = False
+				ExitLoop
+			ElseIf _IsPressed($qKeyPressed) Then
+				$continueLoop = False
+				ExitLoop
+			EndIf
+			Sleep(10)
+		Next
+		
 	WEnd
 
 	; cleanup
 	ToolTip("")
 	AutoItSetOption("MouseCoordMode", 1) ; reset to default
+
+	Return $result
 EndFunc
 
 #cs 
@@ -221,4 +247,9 @@ Func save_hwnd_from_array_display($aArray_2D, $aSelected)
 	Local $selectedHwnd = $aArray_2D[$selectedIndex][1]
 	MsgBox($MB_TASKMODAL, "Selected", "Selected hWnd: " & $selectedHwnd)
 	Return 0
+EndFunc
+
+Func clean_exit()
+	ToolTip("")
+	Exit
 EndFunc
