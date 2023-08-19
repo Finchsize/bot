@@ -5,7 +5,7 @@
 #include <StaticConstants.au3>
 #include <WindowsConstants.au3>
 #Region ### START Koda GUI section ### Form=C:\Users\danie\Desktop\au3\bot\Form1.kxf
-$GUI_BOT = GUICreate("Hunting Bot", 615, 445, -1, -1)
+$GUI_BOT = GUICreate("Hunting Bot", 594, 445, -1, -1)
 GUISetBkColor(0xFFFBF0)
 $GROUP_HUNTING = GUICtrlCreateGroup("Hunting Points", 320, 8, 249, 385, BitOR($GUI_SS_DEFAULT_GROUP,$BS_CENTER), $WS_EX_TRANSPARENT)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
@@ -39,6 +39,7 @@ GUICtrlSetState(-1, $GUI_DISABLE)
 $INPUT_CLIENT_INSTANCE = GUICtrlCreateInput("", 16, 312, 137, 21)
 GUICtrlSetState(-1, $GUI_DISABLE)
 $BTN_ROLL_INSTANCE_NAME = GUICtrlCreateButton("Change instance name", 168, 312, 129, 25)
+$LBL_BOT_INSTANCE_NAME = GUICtrlCreateLabel("Bot instance name:", 16, 288, 95, 17)
 GUISetState(@SW_SHOW)
 #EndRegion ### END Koda GUI section ###
 
@@ -60,19 +61,21 @@ GUISetState(@SW_SHOW)
 #include <String.au3>
 #include <Debug.au3>
 #include <GuiButton.au3>
+#include <File.au3>
 
 GUISetIcon(@ScriptDir & "\bot.ico")
 TraySetIcon(@ScriptDir & "\bot.ico")
 
-$instanceName = ""
-$scriptTempDir = ""
-$scriptSaveDir = ""
+Global $instanceName = ""
+Global $scriptTempDir = ""
+Global $scriptSaveDir = ""
+Global $pointsToGo[0]
 initialize()
 
-$hWnd = 0
-$hWndControl = 0
-$clientWidth = 0
-$clientHeight = 0
+Global $hWnd = 0
+Global $hWndControl = 0
+Global $clientWidth = 0
+Global $clientHeight = 0
 
 While 1
 	$msg = GUIGetMsg()
@@ -174,18 +177,6 @@ Func get_window_handles()
 	GUICtrlSetState($BTN_ADD_POINT_AUTO, $GUI_ENABLE)
 EndFunc
 
-Func load_points_from_file()
-	Local Const $message = "Open text file with points"
-	Local $fileOpenDialogResult = FileOpenDialog($message, $scriptSaveDir, "Text (*.txt)", $FD_FILEMUSTEXIST)
-	If @error Then
-		MsgBox($MB_ICONERROR, "No file selected", "No file has been chosen points are not changed.")
-	Else
-		MsgBox($MB_TASKMODAL, "", "Chosen file:" & @CRLF & $fileOpenDialogResult)
-	EndIf
-	; Change the working directory (@WorkingDir) back to the location of the script directory as FileOpenDialog sets it to the last accessed folder.
-	FileChangeDir(@ScriptDir)
-EndFunc
-
 Func roll_new_instance_name()
 	$result = ""
 	Dim $space[3]
@@ -201,9 +192,9 @@ Func roll_new_instance_name()
 EndFunc
 
 Func save_configuration()
-	Local $pointsCount = _GUICtrlListBox_GetCount($LST_HUNTING_POINTS)
-	Local $pointsToSave = obtain_points_from_lst_ctrl()
 	Local Const $filePath = $scriptSaveDir & "\points.txt"
+	Local $pointsCount = _GUICtrlListBox_GetCount($LST_HUNTING_POINTS)
+	Local $pointsToSave = read_points_from_list()
 	Local $hFileOpen = FileOpen($filePath, $FO_OVERWRITE)
 	For $point In $pointsToSave
 		FileWriteLine($filePath, $point)
@@ -239,13 +230,34 @@ Func edit_point()
 	_GUICtrlListBox_EndUpdate($LST_HUNTING_POINTS)
 EndFunc
 
-Func obtain_points_from_lst_ctrl()
-	Local $pointsCount = _GUICtrlListBox_GetCount($LST_HUNTING_POINTS)
-	Local $points[$pointsCount]
-	For $i = 0 To $pointsCount-1 Step +1
-		$points[$i] = _GUICtrlListBox_GetText($LST_HUNTING_POINTS, $i)
+Func load_points_from_file()
+	; read from file
+	Local Const $message = "Open text file with points"
+	Local $fileOpenDialogResult = FileOpenDialog($message, $scriptSaveDir, "Text (*.txt)", $FD_FILEMUSTEXIST)
+	If @error Then
+		MsgBox($MB_ICONERROR, "No file selected", "No file has been chosen points are not changed.")
+		FileChangeDir(@ScriptDir)
+		Return
+	EndIf
+	; Change the working directory (@WorkingDir) back to the location of the script directory as FileOpenDialog sets it to the last accessed folder.
+	FileChangeDir(@ScriptDir)
+	Local $cordsFromFile = read_file_content($fileOpenDialogResult)
+	If ($cordsFromFile == -1) Then
+		MsgBox($MB_ICONERROR, "Reading cords failed", "Please check if file is in correct format.")
+		Return
+	EndIf
+
+	; put into list in GUI
+	_GUICtrlListBox_BeginUpdate($LST_HUNTING_POINTS)
+	_GUICtrlListBox_ResetContent($LST_HUNTING_POINTS)
+	For $point In $cordsFromFile
+		_GUICtrlListBox_AddString($LST_HUNTING_POINTS, $point)
 	Next
-	Return $points
+	_GUICtrlListBox_EndUpdate($LST_HUNTING_POINTS)
+
+	; put into list in script
+	Local $points = read_points_from_list()
+	$pointsToGo = split_points_to_array($points)
 EndFunc
 
 ; if save button pressed return array[0] = hWnd array[1] = hControlWnd, otheriwse $array[2] = [0,0]
@@ -353,6 +365,7 @@ EndFunc
 ;-----------------------------------------------
 
 Func initialize()
+	; init directories
 	$instanceName = roll_new_instance_name()
 	$scriptTempDir = @ScriptDir & "\temp\" & $instanceName 
 	$scriptSaveDir = @ScriptDir & "\saved\" & $instanceName
@@ -364,6 +377,28 @@ Func initialize()
 		DirCreate($scriptSaveDir)
 	EndIf
 
+	; init default points
+	Local $points = read_points_from_list()
+	$pointsToGo = split_points_to_array($points)
+EndFunc
+
+Func split_points_to_array($points)
+	Local $result[UBound($points)]
+	For $i = 0 To UBound($points)-1 Step +1
+		Local $pointArray = StringSplit($points[$i], ",", $STR_NOCOUNT)
+		Local $point = [$pointArray[0], $pointArray[1]]
+		$result[$i] = $point
+	Next
+	Return $result 
+EndFunc
+
+Func read_points_from_list()
+	Local $pointsCount = _GUICtrlListBox_GetCount($LST_HUNTING_POINTS)
+	Local $points[$pointsCount]
+	For $i = 0 To $pointsCount-1 Step +1
+		$points[$i] = _GUICtrlListBox_GetText($LST_HUNTING_POINTS, $i)
+	Next
+	Return $points
 EndFunc
 
 Func capture_entire_window($imageOutPath, $imageOutName)
@@ -423,5 +458,16 @@ Func process_image($imageFilePathOld, $imageFilePathNew, $cropLeft, $cropRight, 
 	_GDIPlus_GraphicsDispose($hGraphics)
 	_GDIPlus_ImageDispose($hImage)
     _GDIPlus_Shutdown()
-	
+EndFunc
+
+; if fail return -1, success return an array of items
+Func read_file_content($fullPath)
+	Local $hFileOpen = FileOpen($fullPath, $FO_READ)
+	If $hFileOpen = -1 Then
+			Return -1
+	EndIf
+	Local $sOutput
+	_FileReadToArray($hFileOpen, $sOutput, $FRTA_NOCOUNT)
+	FileClose($hFileOpen)
+	Return $sOutput
 EndFunc
