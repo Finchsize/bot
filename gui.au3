@@ -70,6 +70,7 @@ Global $instanceName = ""
 Global $scriptTempDir = ""
 Global $scriptSaveDir = ""
 Global $pointsToGo[0]
+Global $isInBotCheck = False
 initialize()
 
 Global $hWnd = 0
@@ -82,8 +83,6 @@ While 1
 	Switch $msg
 		Case $BTN_START_HUNTING
 			start_hunt()
-		Case $BTN_STOP_HUNTING
-			stop_hunt()
 		Case $BTN_TYPE_VALIDATION_CODE
 			type_validation_code()
 		Case $BTN_GET_CORDS_IN_LOOP
@@ -118,9 +117,7 @@ WEnd
 Func start_hunt()
 	GUICtrlSetState($BTN_START_HUNTING, $GUI_DISABLE)
 	GUICtrlSetState($BTN_STOP_HUNTING, $GUI_ENABLE)
-EndFunc
 
-Func stop_hunt()
 	GUICtrlSetState($BTN_START_HUNTING, $GUI_ENABLE)
 	GUICtrlSetState($BTN_STOP_HUNTING, $GUI_DISABLE)
 EndFunc
@@ -132,20 +129,44 @@ Func get_cords_in_loop()
 	GUICtrlSetState($BTN_GET_CORDS_IN_LOOP, $GUI_DISABLE)
 	GUICtrlSetState($BTN_GET_CORDS_IN_LOOP_STOP, $GUI_ENABLE)
 	Local $continueLoop = True
+	Local $currentXpos = 0
+	Local $currentYpos = 0
 	While $continueLoop
 		capture_entire_window($scriptTempDir, "\cords_from_loop.tiff")
 		process_image($scriptTempDir & "\cords_from_loop.tiff", $scriptTempDir & "\cords_from_loop_cropped.tiff", 69, 1798, 0, 1060)
-		;~ ToolTip("X: " & $currentXpos & " Y: " & $currentYpos)
+		run_tesseract($scriptTempDir & "\cords_from_loop", $scriptTempDir & "\cords_from_loop_cropped.tiff")
+
+		; sleep 200 for tesseract processing; check for button stop in the meantime
 		For $i = 0 To 20 Step +1
 			Sleep(10)
 			Local $msg = GUIGetMsg()
 			Switch $msg
 				Case $BTN_GET_CORDS_IN_LOOP_STOP
 					$continueLoop = False
-					ExitLoop
 			EndSwitch
 		Next
+
+		; read tesseract output
+		Local $currentPointRaw = read_file_content($scriptTempDir & "\cords_from_loop.txt")
+		If ($currentPointRaw == -1) Then
+			ToolTip("Reading cords failed")
+			ContinueLoop
+		EndIf
+
+		; clean tesseract junk
+		Local $pointCleaned = StringReplace($currentPointRaw[0], ".", "")
+		$pointCleaned = StringReplace($pointCleaned, @LF, "")
+
+		; check if tesseract output is in good format
+		If StringLen($pointCleaned) == 6 Then
+			$currentXpos = Number(StringLeft($pointCleaned, 3))
+			$currentYpos = Number(StringRight($pointCleaned, 3))
+		EndIf
+
+		; show cords
+		ToolTip("X: " & $currentXpos & " Y: " & $currentYpos, 0, 30)
 	WEnd
+	ToolTip("")
 	GUICtrlSetState($BTN_GET_CORDS_IN_LOOP, $GUI_ENABLE)
 	GUICtrlSetState($BTN_GET_CORDS_IN_LOOP_STOP, $GUI_DISABLE)
 EndFunc
@@ -417,7 +438,7 @@ EndFunc
 - set background color to black
 #ce
 Func process_image($imageFilePathOld, $imageFilePathNew, $cropLeft, $cropRight, $cropTop = 0, $cropBottom = 0)
-
+	
 	_GDIPlus_Startup()
 
 	; crop image
@@ -470,4 +491,10 @@ Func read_file_content($fullPath)
 	_FileReadToArray($hFileOpen, $sOutput, $FRTA_NOCOUNT)
 	FileClose($hFileOpen)
 	Return $sOutput
+EndFunc
+
+Func run_tesseract($ResultTextPath, $sImageFilePath)
+	Local $TesseractExePath = @ScriptDir & "\Tesseract-OCR\tesseract.exe"
+	Local $iPID = Run($TesseractExePath & " " &  $sImageFilePath & " " & $ResultTextPath &" nobatch digits" , "" , @SW_HIDE, $RUN_CREATE_NEW_CONSOLE)
+	StdioClose($iPID)
 EndFunc
