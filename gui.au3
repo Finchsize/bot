@@ -18,8 +18,8 @@ $BTN_EXIT = GUICtrlCreateButton("Exit", 488, 400, 75, 25)
 $BTN_GET_CORDS_IN_LOOP = GUICtrlCreateButton("Get cords in loop", 24, 96, 137, 33)
 GUICtrlSetState(-1, $GUI_DISABLE)
 $BTN_GET_HANDLES = GUICtrlCreateButton("Get window handles", 24, 136, 139, 33)
-$LST_HUNTING_POINTS = GUICtrlCreateList("", 336, 35, 89, 344)
-GUICtrlSetData(-1, "641,797|628,555|764,698|784,648|665,554|897,565")
+$LST_HUNTING_POINTS = GUICtrlCreateList("", 336, 35, 89, 344, BitOR($LBS_NOTIFY,$WS_VSCROLL,$WS_BORDER))
+GUICtrlSetData(-1, "898,563|871,585|707,557|807,648|779,669|635,542|620,574|751,703|723,739|622,643|654,800|623,835")
 GUICtrlSetBkColor(-1, 0xFFFFFF)
 $BTN_DELETE_POINT = GUICtrlCreateButton("Delete Point", 440, 104, 107, 25)
 $BTN_EDIT_POINT = GUICtrlCreateButton("Edit Point", 440, 136, 107, 25)
@@ -43,6 +43,7 @@ $LBL_BOT_INSTANCE_NAME = GUICtrlCreateLabel("Bot instance name:", 16, 288, 95, 1
 $LABEL_HWND_INFO = GUICtrlCreateLabel(" hWnd info", 26, 176, 246, 104, -1, $WS_EX_CLIENTEDGE)
 GUISetState(@SW_SHOW)
 #EndRegion ### END Koda GUI section ###
+
 
 #include <FileConstants.au3>
 #include <MsgBoxConstants.au3>
@@ -832,7 +833,7 @@ Func jump($xCordClick, $yCordClick, $currentSleep)
 		WinSetOnTop($hWnd, "", $WINDOWS_NOONTOP)
 
 		; return PC to user - put old window as active
-		MouseMove($oldMousePos[0], $oldMousePos[1], 10)
+		MouseMove($oldMousePos[0], $oldMousePos[1], 0)
 		WinSetOnTop($hOldWndActive, "", $WINDOWS_ONTOP)
 		WinSetState($hOldWndActive, "", @SW_SHOW)
 		WinActivate($hOldWndActive)

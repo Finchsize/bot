@@ -119,16 +119,22 @@
 				<property name="ItemHeight" vt="Int8">13</property>
 				<property name="Items.Strings" vt="List">
 					<list>
-						<li vt="String">626,831</li>
-						<li vt="String">627,674</li>
-						<li vt="String">632,582</li>
-						<li vt="String">654,777</li>
-						<li vt="String">700,555</li>
-						<li vt="String">897,564</li>
+						<li vt="String">898,563</li>
+						<li vt="String">871,585</li>
+						<li vt="String">707,557</li>
+						<li vt="String">807,648</li>
+						<li vt="String">779,669</li>
+						<li vt="String">635,542</li>
+						<li vt="String">620,574</li>
+						<li vt="String">751,703</li>
+						<li vt="String">723,739</li>
+						<li vt="String">622,643</li>
+						<li vt="String">654,800</li>
+						<li vt="String">623,835</li>
 					</list>
 				</property>
 				<property name="TabOrder" vt="Int8">6</property>
-				<property name="CtrlStyle" vt="Int32">1352859651</property>
+				<property name="CtrlStyle" vt="Int32">1352859649</property>
 				<property name="CtrlExStyle" vt="Int16">512</property>
 				<property name="Resizing" vt="Set"/>
 			</properties>
