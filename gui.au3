@@ -257,6 +257,7 @@ Func start_hunt()
 EndFunc
 
 Func type_validation_code()
+	ConsoleWrite("AntyBot has been triggered!" & @CRLF)
 	$isInBotCheck = True
 	While (check_if_mouse_is_locked() == 1)
 		Sleep(30)
@@ -264,7 +265,7 @@ Func type_validation_code()
 	lock_mouse()
 	$hOldWndActive = WinGetHandle("[active]")
 	close_npc_message_box()
-	ConsoleWrite("AntyBot has been triggered!" & @CRLF)
+	
 	Local $windowAbsolutePosition = WinGetPos($hWnd)
 
 	; put the window on top
