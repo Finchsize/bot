@@ -180,8 +180,6 @@ Func start_hunt()
 			$currentXpos = Number(StringLeft($pointCleaned, 3))
 			$currentYpos = Number(StringRight($pointCleaned, 3))
 		EndIf
-
-		ConsoleWrite("Current pos X: " & $currentXpos & " Current pos Y: " & $currentYpos & @CRLF)
 		
 		If $currentXpos == 51 And $currentYpos == 51 Then
 			close_npc_message_box()
@@ -209,49 +207,40 @@ Func start_hunt()
 			jump_up($currentSleep)
 			Sleep(Mod($currentSleep, 50))
 			scatter_up()
-			ConsoleWrite("jump_up" & @CRLF)
 		ElseIf($currentXpos + 8 < $goToPointX And $currentYpos + 8 < $goToPointY) Then
 			jump_down($currentSleep)
 			Sleep(Mod($currentSleep, 50))
 			scatter_down()
-			ConsoleWrite("jump_down" & @CRLF)
 		ElseIf($currentXpos - 8 > $goToPointX And $currentYpos + 8 < $goToPointY) Then
 			jump_left($currentSleep)
 			Sleep(Mod($currentSleep, 50))
 			scatter_left()
-			ConsoleWrite("jump_left" & @CRLF)
 		ElseIf($currentXpos + 8 < $goToPointX And $currentYpos - 8 > $goToPointY) Then
 			jump_right($currentSleep)
 			Sleep(Mod($currentSleep, 50))
 			scatter_right()
-			ConsoleWrite("jump_right" & @CRLF)
 		;diagonal jump
 		ElseIf ($currentXpos - 16 > $goToPointX) Then
 			jump_x_up($currentSleep)
 			Sleep(Mod($currentSleep, 50))
 			scatter_x_up()
-			ConsoleWrite("jump_x_up" & @CRLF)
 		ElseIf ($currentXpos + 16 < $goToPointX) Then
 			jump_x_down($currentSleep)
 			Sleep(Mod($currentSleep, 50))
 			scatter_x_down()
-			ConsoleWrite("jump_x_down" & @CRLF)
 		ElseIf ($currentYpos - 16 > $goToPointY) Then
 			jump_y_up($currentSleep)
 			Sleep(Mod($currentSleep, 50))
 			scatter_y_up()
-			ConsoleWrite("jump_y_up" & @CRLF)
 		ElseIf ($currentYpos + 16 < $goToPointY) Then
 			jump_y_down($currentSleep)
 			Sleep(Mod($currentSleep, 50))
 			scatter_y_down()
-			ConsoleWrite("jump_y_down" & @CRLF)
 		Else
 			ConsoleWrite("Change point!" & @CRLF)
 			$pointsIterator = Mod($pointsIterator + 1 , UBound($pointsToGo))
 		EndIf
 
-		ConsoleWrite("Going to point: " & $pointsIterator & " Cord X: " & $goToPointX & " Cord Y: " & $goToPointY & @CRLF)
 		Sleep($currentSleep)
 		For $i = 0 To 30 Step +1
 			Sleep(10)
@@ -268,9 +257,13 @@ Func start_hunt()
 EndFunc
 
 Func type_validation_code()
+	$isInBotCheck = True
+	While (check_if_mouse_is_locked() == 1)
+		Sleep(30)
+	WEnd
+	lock_mouse()
 	$hOldWndActive = WinGetHandle("[active]")
 	close_npc_message_box()
-	$isInBotCheck = True
 	ConsoleWrite("AntyBot has been triggered!" & @CRLF)
 	Local $windowAbsolutePosition = WinGetPos($hWnd)
 
@@ -295,12 +288,12 @@ Func type_validation_code()
 	#ce
 	
 	; capture entire screen
-	Capture_Entire_Window($hWnd, $scriptTempDir & "\entire_screen_anytbot.tiff")
-	Sleep(100)
+	capture_entire_window($scriptTempDir, "\entire_screen_anytbot.tiff")
+	Sleep(200)
 
 	; capture the code value
 	process_image($scriptTempDir & "\entire_screen_anytbot.tiff", $scriptTempDir & "\cropped_antybot.tiff", 878, 950, 60, 980)
-	Sleep(100)
+	Sleep(200)
 
 	; run tesseract to decode the value from image to text
 	run_tesseract($scriptTempDir & "\antybot_code", $scriptTempDir & "\cropped_antybot.tiff")
@@ -350,6 +343,7 @@ Func type_validation_code()
 
 	; change flag so other functions know character left anty bot
 	$iIsInBotCheck = False
+	unlock_mouse()
 EndFunc
 
 Func get_cords_in_loop()
@@ -376,7 +370,7 @@ Func get_cords_in_loop()
 		; read tesseract output
 		Local $currentPointRaw = read_file_content($scriptTempDir & "\cords_from_loop.txt")
 		If ($currentPointRaw == -1) Then
-			ToolTip("Reading cords failed")
+			ConsoleWrite("Reading cords failed" & @CRLF)
 			ContinueLoop
 		EndIf
 
@@ -821,6 +815,10 @@ Func jump($xCordClick, $yCordClick, $currentSleep)
 
 	; anty bot jail protection
 	If ($currentClickCountCycle == 0) Then
+		While (check_if_mouse_is_locked() == 1)
+			Sleep(30)
+		WEnd
+		lock_mouse()
 		Local $hOldWndActive = WinGetHandle("[active]")
 		Local $oldMousePos = MouseGetPos()
 		ToolTip("Mouse will be taken in: 0")
@@ -842,6 +840,7 @@ Func jump($xCordClick, $yCordClick, $currentSleep)
 
 		; cleanup
 		ToolTip("")
+		unlock_mouse()
 		Return
 	EndIf
 	
@@ -862,4 +861,20 @@ Func scatter($xCordClick, $yCordClick)
 	_SendMessage($hWndControl, $WM_RBUTTONDOWN, $wParam , $lParam)
 	Sleep(Random(30, 80, 1))
 	_SendMessage($hWndControl, $WM_RBUTTONUP, $wParam , $lParam)
+EndFunc
+
+Func lock_mouse()
+	Local Const $filePath = @ScriptDir & "\temp\mouse_taken.lock"
+	_FileCreate($filePath)
+EndFunc
+
+Func unlock_mouse()
+	Local Const $filePath = @ScriptDir & "\temp\mouse_taken.lock"
+	FileDelete($filePath)
+EndFunc
+
+; return 1 if file is there 0 if not
+Func check_if_mouse_is_locked()
+	Local Const $filePath = @ScriptDir & "\temp\mouse_taken.lock"
+	FileExists ($filePath)
 EndFunc
