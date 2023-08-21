@@ -40,7 +40,7 @@ $INPUT_CLIENT_INSTANCE = GUICtrlCreateInput("", 16, 312, 137, 21)
 GUICtrlSetState(-1, $GUI_DISABLE)
 $BTN_ROLL_INSTANCE_NAME = GUICtrlCreateButton("Change instance name", 168, 312, 129, 25)
 $LBL_BOT_INSTANCE_NAME = GUICtrlCreateLabel("Bot instance name:", 16, 288, 95, 17)
-$LABEL_HWND_INFO = GUICtrlCreateLabel(" hWnd info", 26, 176, 246, 104, -1, $WS_EX_CLIENTEDGE)
+$LABEL_HWND_INFO = GUICtrlCreateLabel(" Use ""Get Window handles"" to start hunting...", 26, 176, 246, 104, -1, $WS_EX_CLIENTEDGE)
 GUISetState(@SW_SHOW)
 #EndRegion ### END Koda GUI section ###
 
@@ -64,6 +64,7 @@ GUISetState(@SW_SHOW)
 #include <Debug.au3>
 #include <GuiButton.au3>
 #include <File.au3>
+#include <ConquerOcr.au3>
 
 GUISetIcon(@ScriptDir & "\bot.ico")
 TraySetIcon(@ScriptDir & "\bot.ico")
@@ -139,6 +140,9 @@ Func start_hunt()
 	Local $lastSleepArray[$randomSleepArraySize]
 	Local $randomJumpCurrentIt = 0
 	Local $continueLoop = True
+	Local $currentXpos = 0
+	Local $currentYpos = 0
+
 	While $continueLoop
 		; prepare random sleep time
 		Local $currentSleep = Random(5, 20, 1) * 10
@@ -150,41 +154,25 @@ Func start_hunt()
 
 		; get cords
 		capture_entire_window($scriptTempDir, "\cords_from_hunting.tiff")
-		process_image($scriptTempDir & "\cords_from_hunting.tiff", $scriptTempDir & "\cords_from_hunting_cropped.tiff", 68, 1770, 0, 1060)
-		run_tesseract($scriptTempDir & "\cords_from_hunting", $scriptTempDir & "\cords_from_hunting_cropped.tiff")
+		process_image($scriptTempDir & "\cords_from_hunting.tiff", $scriptTempDir & "\cords_from_hunting_cropped.tiff", 73, 1802, 4, 1065)
+		Local $currentCords = perform_ocr($scriptTempDir & "\cords_from_hunting_cropped.tiff")
 
-		; sleep 200 for tesseract processing; check for button stop in the meantime
-		For $i = 0 To 20 Step +1
-			Sleep(10)
-			Local $msg = GUIGetMsg()
-			Switch $msg
-				Case $BTN_STOP_HUNTING
-					$continueLoop = False
-			EndSwitch
-		Next
-
-		; read tesseract output
-		Local $currentPointRaw = read_file_content($scriptTempDir & "\cords_from_hunting.txt")
-		If ($currentPointRaw == -1) Then
-			ToolTip("Reading cords failed")
-			random_jump($currentSleep)
-			ContinueLoop
-		EndIf
-
-		; clean tesseract junk
-		Local $pointCleaned = StringReplace($currentPointRaw[0], ".", "")
-		$pointCleaned = StringReplace($pointCleaned, @LF, "")
-
-		; check if tesseract output is in good format
-		If StringLen($pointCleaned) == 6 Then
-			$currentXpos = Number(StringLeft($pointCleaned, 3))
-			$currentYpos = Number(StringRight($pointCleaned, 3))
+		If StringLen($currentCords) == 6 Then
+			$currentXpos = Number(StringLeft($currentCords, 3))
+			$currentYpos = Number(StringRight($currentCords, 3))
 		EndIf
 		
 		If $currentXpos == 51 And $currentYpos == 51 Then
 			close_npc_message_box()
 			type_validation_code()
-			Sleep(500)
+			For $i = 0 To 50 Step +1
+				Sleep(10)
+				Local $msg = GUIGetMsg()
+				Switch $msg
+					Case $BTN_STOP_HUNTING
+						$continueLoop = False
+				EndSwitch
+			Next
 		EndIf
 		
 		; try to turn on cyclone
@@ -242,7 +230,7 @@ Func start_hunt()
 		EndIf
 
 		Sleep($currentSleep)
-		For $i = 0 To 30 Step +1
+		For $i = 0 To 50 Step +1
 			Sleep(10)
 			Local $msg = GUIGetMsg()
 			Switch $msg
@@ -354,14 +342,17 @@ Func get_cords_in_loop()
 	Local $currentXpos = 0
 	Local $currentYpos = 0
 	While $continueLoop
-		Local $randomName = String(Random(0, 500, 1))
-		capture_entire_window($scriptTempDir, "\cords_from_loop" & $randomName & ".tiff")
-		;process_image($imageFilePathOld, $imageFilePathNew, $cropLeft, $cropRight, $cropTop = 0, $cropBottom = 0)
-		process_image($scriptTempDir & "\cords_from_loop" & $randomName & ".tiff", $scriptTempDir & "\cords_from_loop_cropped" & $randomName & ".tiff", 73, 1802, 4, 1065)
-		run_tesseract($scriptTempDir & "\cords_from_loop" & $randomName, $scriptTempDir & "\cords_from_loop_cropped" & $randomName & ".tiff")
+		capture_entire_window($scriptTempDir, "\cords_from_loop.tiff")
+		process_image($scriptTempDir & "\cords_from_loop.tiff", $scriptTempDir & "\cords_from_loop_cropped.tiff", 73, 1802, 4, 1065)
+		Local $currentCords = perform_ocr($scriptTempDir & "\cords_from_loop_cropped.tiff")
 
-		; sleep 200 for tesseract processing; check for button stop in the meantime
-		For $i = 0 To 100 Step +1
+		If StringLen($currentCords) == 6 Then
+			$currentXpos = Number(StringLeft($currentCords, 3))
+			$currentYpos = Number(StringRight($currentCords, 3))
+		EndIf
+
+		; do some sleep
+		For $i = 0 To 5 Step +1
 			Sleep(10)
 			Local $msg = GUIGetMsg()
 			Switch $msg
@@ -370,24 +361,6 @@ Func get_cords_in_loop()
 			EndSwitch
 		Next
 
-		; read tesseract output
-		Local $currentPointRaw = read_file_content($scriptTempDir & "\cords_from_loop" & $randomName & ".txt")
-		If (UBound($currentPointRaw) == 0 Or $currentPointRaw[0] == -1) Then
-			ConsoleWrite("Reading cords failed" & @CRLF)
-			ContinueLoop
-		EndIf
-
-		; clean tesseract junk
-		Local $pointCleaned = StringReplace($currentPointRaw[0], ".", "")
-		$pointCleaned = StringReplace($pointCleaned, @LF, "")
-
-		; check if tesseract output is in good format
-		If StringLen($pointCleaned) == 6 Then
-			$currentXpos = Number(StringLeft($pointCleaned, 3))
-			$currentYpos = Number(StringRight($pointCleaned, 3))
-		EndIf
-
-		; show cords
 		ToolTip("X: " & $currentXpos & " Y: " & $currentYpos, 0, 30)
 	WEnd
 	ToolTip("")
@@ -403,12 +376,14 @@ Func get_window_handles()
 	EndIf
 	$hWnd = $hwndArray[0]
 	$hWndControl = $hwndArray[1]
+	Local $windowTitle = $hwndArray[2]
 
 	Local $clientSize = WinGetClientSize($hWnd)
 	$clientWidth = $clientSize[0]
 	$clientHeight = $clientSize[1]
 
 	GUICtrlSetData($LABEL_HWND_INFO, _
+	" Window Title = " & $windowTitle & @CRLF & _
 	" hWnd = " & $hWnd & @CRLF & _
 	" hWndControl = " & $hWndControl & @CRLF & _
 	" Window Width = " & $clientWidth & @CRLF & _
@@ -510,7 +485,7 @@ Func show_info_tooltip()
 	Local $qKeyPressed = "51"
 	Local $sKeyPressed = "53"
 	Local $continueLoop = True
-	Local $result[2] = [0,0]
+	Local $result[3] = [0,0,""]
 	While $continueLoop
 		AutoItSetOption("MouseCoordMode", 1) ; global position
 		Local $windowsInfo = get_window_info()
@@ -535,6 +510,7 @@ Func show_info_tooltip()
 			If _IsPressed($sKeyPressed) Then
 				$result[0] = $windowsInfo[0]
 				$result[1] = $windowsInfo[1]
+				$result[2] = $windowsInfo[2]
 				$continueLoop = False
 				ExitLoop
 			ElseIf _IsPressed($qKeyPressed) Then
@@ -650,9 +626,18 @@ Func capture_entire_window($imageOutPath, $imageOutName)
 	Local $hDC_Capture = _WinAPI_GetDC($hWnd)
 	Local $hMemDC = _WinAPI_CreateCompatibleDC($hDC_Capture)
 	Local $hBitmap = _WinAPI_CreateCompatibleBitmap($hDC_Capture, $clientWidth, $clientHeight)
+
+	; save to file
 	_WinAPI_SelectObject($hMemDC, $hBitmap)
 	_WinAPI_PrintWindow($hWnd, $hMemDC)
 	_WinAPI_SaveHBITMAPToFile($imageOutPath & $imageOutName, $hBitmap)
+
+	; cleanup
+	_WinAPI_ReleaseDC($hWnd, $hDC_Capture)
+	_WinAPI_ReleaseDC(0, $hMemDC)
+	_WinAPI_DeleteDC($hMemDC)
+	_WinAPI_DeleteObject($hBitmap)
+	
 EndFunc
 
 #cs Function process image as follows:

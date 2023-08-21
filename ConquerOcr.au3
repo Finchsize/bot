@@ -1,20 +1,16 @@
 #include <GDIPlus.au3>
 #include <array.au3>
 
+;~ HotKeySet("l", "test_proc")
 
-;~ While 1
-;~ 	Sleep(20)
-	ConsoleWrite(@CRLF & _ArrayToString(perform_ocr()) & @CRLF)
-	ConsoleWrite(@CRLF)
-	Exit
-;~ WEnd
+;~ Func test_proc()
 
+;~ EndFunc
 
-Func perform_ocr()
+Func perform_ocr($filePath)
 
 	_GDIPlus_Startup()
 
-	$filePath = "C:\Users\danie\Desktop\Cords_ss\cords_from_loop_cropped85.tiff"
 	Local $hImage = _GDIPlus_BitmapCreateFromFile($filePath)
 	Local $iX = _GDIPlus_ImageGetWidth($hImage)
 	Local $iY = _GDIPlus_ImageGetHeight($hImage)
@@ -25,8 +21,6 @@ Func perform_ocr()
 	Local $tLock = _GDIPlus_BitmapLockBits($hImageConverted, 0, 0, $iWidth, $iHeight,  $GDIP_ILMREAD, $GDIP_PXF32ARGB)
 	Local $iScan0 = DllStructGetData($tLock, "Scan0") ;get scan0 (pixel data) from locked bitmap
 	Local $tPixel = DllStructCreate("int color[" & $iWidth * $iHeight & "];", $iScan0)
-
-	ConsoleWrite("Width: " & $iWidth & " Heigh: " & $iHeight & @CRLF)
 
 	; put colors from 1D array into 2D array
 	Local $pixelColors[$iHeight][$iWidth]
@@ -42,6 +36,13 @@ Func perform_ocr()
 			$colIndex = 0
 		EndIf
 	Next
+
+	;clean handles etc
+	_GDIPlus_BitmapUnlockBits($hImageConverted, $tLock)
+	_GDIPlus_BitmapUnlockBits($hImageConverted, $tPixel)
+    _GDIPlus_ImageDispose($hImageConverted)
+	_GDIPlus_ImageDispose($hImage)
+    _GDIPlus_Shutdown()
 
 	Local $digitMarginLeft = 1
 	Local $digitMarginRight = 1
@@ -199,10 +200,5 @@ Func perform_ocr()
 		EndIf
 	Next
 
-	;clean handles etc
-    _GDIPlus_ImageDispose($hImageConverted)
-	_GDIPlus_ImageDispose($hImage)
-    _GDIPlus_Shutdown()
-
-	Return $result
+	Return _ArrayToString($result, "")
 EndFunc
