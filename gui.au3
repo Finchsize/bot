@@ -354,12 +354,14 @@ Func get_cords_in_loop()
 	Local $currentXpos = 0
 	Local $currentYpos = 0
 	While $continueLoop
-		capture_entire_window($scriptTempDir, "\cords_from_loop.tiff")
-		process_image($scriptTempDir & "\cords_from_loop.tiff", $scriptTempDir & "\cords_from_loop_cropped.tiff", 69, 1798, 0, 1060)
-		run_tesseract($scriptTempDir & "\cords_from_loop", $scriptTempDir & "\cords_from_loop_cropped.tiff")
+		Local $randomName = String(Random(0, 500, 1))
+		capture_entire_window($scriptTempDir, "\cords_from_loop" & $randomName & ".tiff")
+		;process_image($imageFilePathOld, $imageFilePathNew, $cropLeft, $cropRight, $cropTop = 0, $cropBottom = 0)
+		process_image($scriptTempDir & "\cords_from_loop" & $randomName & ".tiff", $scriptTempDir & "\cords_from_loop_cropped" & $randomName & ".tiff", 73, 1802, 4, 1065)
+		run_tesseract($scriptTempDir & "\cords_from_loop" & $randomName, $scriptTempDir & "\cords_from_loop_cropped" & $randomName & ".tiff")
 
 		; sleep 200 for tesseract processing; check for button stop in the meantime
-		For $i = 0 To 20 Step +1
+		For $i = 0 To 100 Step +1
 			Sleep(10)
 			Local $msg = GUIGetMsg()
 			Switch $msg
@@ -369,8 +371,8 @@ Func get_cords_in_loop()
 		Next
 
 		; read tesseract output
-		Local $currentPointRaw = read_file_content($scriptTempDir & "\cords_from_loop.txt")
-		If ($currentPointRaw == -1) Then
+		Local $currentPointRaw = read_file_content($scriptTempDir & "\cords_from_loop" & $randomName & ".txt")
+		If (UBound($currentPointRaw) == 0 Or $currentPointRaw[0] == -1) Then
 			ConsoleWrite("Reading cords failed" & @CRLF)
 			ContinueLoop
 		EndIf
