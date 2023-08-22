@@ -1,12 +1,6 @@
 #include <GDIPlus.au3>
 #include <array.au3>
 
-;~ HotKeySet("l", "test_proc")
-
-;~ Func test_proc()
-
-;~ EndFunc
-
 Func perform_ocr($filePath)
 
 	_GDIPlus_Startup()
@@ -143,9 +137,10 @@ Func perform_ocr($filePath)
 		EndIf
 
 		; find 5
-		If ($currentPixelOfDigit == 1 And $isBlack _ ; 1st black pixel
+		If ($rowIndex == 1 _; this check is only for first row
+			And $currentPixelOfDigit == 1 And $isBlack _ ; 1st black pixel
+			And $pixelColors[$rowIndex][$colIndex + 1] == 0xFFFFFFFF _ ; 2nd white pixel
 			And $pixelColors[$rowIndex][$colIndex + 4] == 0xFFFFFFFF _ ; 5th white pixel
-			And $rowIndex == 1 _; this check is only for first row
 			) Then
 			Redim $result[UBound($result) + 1]
 			$result[$currentIndexOfDigit] = 5
