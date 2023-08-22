@@ -10,6 +10,7 @@ GUISetBkColor(0xFFFBF0)
 $GROUP_HUNTING = GUICtrlCreateGroup("Hunting Points", 320, 8, 249, 385, BitOR($GUI_SS_DEFAULT_GROUP,$BS_CENTER), $WS_EX_TRANSPARENT)
 $CHBOX_RANDOM_CORDS = GUICtrlCreateCheckbox("Random order", 448, 200, 97, 25)
 GUICtrlSetState(-1, $GUI_CHECKED)
+$BTN_SAVE_CORDS_TO_FILE = GUICtrlCreateButton("Save...", 440, 232, 107, 25)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlSetState(-1, $GUI_DISABLE)
 $BTN_TYPE_VALIDATION_CODE = GUICtrlCreateButton("Auto type validation code", 24, 56, 139, 33)
@@ -123,9 +124,11 @@ While 1
 			save_configuration()
 		Case $BTN_LOAD_CONFIGURATION
 			load_configuration()
+		Case $BTN_SAVE_CORDS_TO_FILE
+			save_points_to_file()
 		Case $BTN_ADD_POINT
 			add_point_manually()
-		Case $BTN_ADD_POINT_AUTO
+			Case $BTN_ADD_POINT_AUTO
 			add_point_automatically()
 		Case $BTN_DELETE_POINT
 			delete_point()
@@ -449,6 +452,18 @@ Func add_point_manually()
 	_GUICtrlListBox_EndUpdate($LST_HUNTING_POINTS)
 	
 	read_points_from_list()
+EndFunc
+
+Func save_points_to_file()
+	Local $pointsCount = _GUICtrlListBox_GetCount($LST_HUNTING_POINTS)
+	Local $pointsToSave = read_points_from_list()
+	Local $newFilePath = FileSaveDialog("Save to file", $scriptSaveDir, "Text (*.txt)")
+	Local $hFileOpen = FileOpen($newFilePath, $FO_OVERWRITE)
+	For $point In $pointsToSave
+		FileWriteLine($newFilePath, $point)
+	Next
+	FileClose($newFilePath)
+	MsgBox($MB_TASKMODAL, "Saved", "Hunting points saved to: " & @CRLF & $newFilePath)
 EndFunc
 
 Func add_point_automatically()
