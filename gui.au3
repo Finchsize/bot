@@ -511,7 +511,7 @@ EndFunc
 Func load_points_from_file()
 	; read from file
 	Local Const $message = "Open text file with points"
-	Local $fileOpenDialogResult = FileOpenDialog($message, $scriptSaveDir, "Text (*.txt)", $FD_FILEMUSTEXIST)
+	Local $fileOpenDialogResult = FileOpenDialog($message, @ScriptDir & "\default_cords", "Text (*.txt)", $FD_FILEMUSTEXIST)
 	If @error Then
 		MsgBox($MB_ICONERROR, "No file selected", "No file has been chosen points are not changed.")
 		FileChangeDir(@ScriptDir)
