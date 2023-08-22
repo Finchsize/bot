@@ -128,7 +128,7 @@ While 1
 			save_points_to_file()
 		Case $BTN_ADD_POINT
 			add_point_manually()
-			Case $BTN_ADD_POINT_AUTO
+		Case $BTN_ADD_POINT_AUTO
 			add_point_automatically()
 		Case $BTN_DELETE_POINT
 			delete_point()
@@ -459,7 +459,7 @@ EndFunc
 Func save_points_to_file()
 	Local $pointsCount = _GUICtrlListBox_GetCount($LST_HUNTING_POINTS)
 	Local $pointsToSave = read_points_from_list()
-	Local $newFilePath = FileSaveDialog("Save to file", $scriptSaveDir, "Text (*.txt)")
+	Local $newFilePath = FileSaveDialog("Save to file", @ScriptDir & "\default_cords", "Text (*.txt)")
 	Local $hFileOpen = FileOpen($newFilePath, $FO_OVERWRITE)
 	For $point In $pointsToSave
 		FileWriteLine($newFilePath, $point)
@@ -921,5 +921,5 @@ EndFunc
 ; return 1 if file is there 0 if not
 Func check_if_mouse_is_locked()
 	Local Const $filePath = @ScriptDir & "\temp\mouse_taken.lock"
-	FileExists ($filePath)
+	Return FileExists($filePath)
 EndFunc
