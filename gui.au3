@@ -89,7 +89,16 @@ Global $hWnd = 0
 Global $hWndControl = 0
 Global $clientWidth = 0
 Global $clientHeight = 0
-Global $windowAbsolutePosition = 0
+
+; retrieve parents for control
+;~ Local $parent1 = _WinAPI_GetParent($hWndControl)
+;~ ConsoleWrite($parent1 & @CRLF)
+;~ Local $parent2 = _WinAPI_GetParent($parent1)
+;~ ConsoleWrite($parent2 & @CRLF)
+;~ Local $parent3 = _WinAPI_GetParent($parent2)
+;~ ConsoleWrite($parent3 & @CRLF)
+;~ Local $parent4 = _WinAPI_GetParent($parent3)
+;~ ConsoleWrite($parent4 & @CRLF)
 
 initialize()
 
@@ -135,6 +144,7 @@ Func start_hunt()
 	If ($isInBotCheck) Then
 		Return
 	EndIf
+	_GUICtrlListBox_SetCurSel($LST_HUNTING_POINTS, 0)
 	Local $pointsIterator = 0
 	Local $sleepArrayIterator = 0
 	Local $lastSleepArray[$randomSleepArraySize]
@@ -226,6 +236,12 @@ Func start_hunt()
 			scatter_y_down()
 		Else
 			ConsoleWrite("Change point!" & @CRLF)
+			_GUICtrlListBox_SetCurSel($LST_HUNTING_POINTS, _
+				Mod( _
+					_GUICtrlListBox_GetCaretIndex($LST_HUNTING_POINTS) + 1, _
+					_GUICtrlListBox_GetCount($LST_HUNTING_POINTS) _
+					) _
+				)
 			$pointsIterator = Mod($pointsIterator + 1 , UBound($pointsToGo))
 		EndIf
 
@@ -379,8 +395,6 @@ Func get_window_handles()
 	" Window Width = " & $clientWidth & @CRLF & _
 	" Window Height = " & $clientHeight)
 
-	$windowAbsolutePosition = WinGetPos($hWnd)
-
 	GUICtrlSetState($BTN_START_HUNTING, $GUI_ENABLE)
 	GUICtrlSetState($BTN_TYPE_VALIDATION_CODE, $GUI_ENABLE)
 	GUICtrlSetState($BTN_GET_CORDS_IN_LOOP, $GUI_ENABLE)
@@ -418,13 +432,36 @@ Func load_configuration()
 EndFunc
 
 Func add_point_manually()
+	Local $newValue = InputBox("Add cord", "Enter value as xxx,xxx example: 555,555", "")
+	_GUICtrlListBox_BeginUpdate($LST_HUNTING_POINTS)
+	_GUICtrlListBox_AddString($LST_HUNTING_POINTS, $newValue)
+	_GUICtrlListBox_EndUpdate($LST_HUNTING_POINTS)
+	
+	read_points_from_list()
 EndFunc
 
 Func add_point_automatically()
+	Local $currentXpos = 0
+	Local $currentYpos = 0
+	capture_entire_window($scriptTempDir, "\cords_from_auto_obtain.tiff")
+	process_image($scriptTempDir & "\cords_from_auto_obtain.tiff", $scriptTempDir & "\cords_from_auto_obtain_cropped.tiff", 73, 1802, 4, 1065)
+	Local $currentCords = perform_ocr($scriptTempDir & "\cords_from_auto_obtain_cropped.tiff")
+
+	If StringLen($currentCords) == 6 Then
+		$currentXpos = Number(StringLeft($currentCords, 3))
+		$currentYpos = Number(StringRight($currentCords, 3))
+	EndIf
+
+	_GUICtrlListBox_BeginUpdate($LST_HUNTING_POINTS)
+	_GUICtrlListBox_AddString($LST_HUNTING_POINTS, $currentXpos & "," & $currentYpos)
+	_GUICtrlListBox_EndUpdate($LST_HUNTING_POINTS)
+
+	read_points_from_list()
 EndFunc
 
 Func delete_point()
 	_GUICtrlListBox_DeleteString($LST_HUNTING_POINTS, _GUICtrlListBox_GetCaretIndex($LST_HUNTING_POINTS))
+	read_points_from_list()
 EndFunc
 
 Func edit_point()
@@ -438,6 +475,8 @@ Func edit_point()
 	_GUICtrlListBox_BeginUpdate($LST_HUNTING_POINTS)
 	_GUICtrlListBox_ReplaceString($LST_HUNTING_POINTS, $selectedItemIndex, $newValue)
 	_GUICtrlListBox_EndUpdate($LST_HUNTING_POINTS)
+
+	read_points_from_list()
 EndFunc
 
 Func load_points_from_file()
@@ -468,6 +507,8 @@ Func load_points_from_file()
 	; put into list in script
 	Local $points = read_points_from_list()
 	$pointsToGo = split_points_to_array($points)
+
+	read_points_from_list()
 EndFunc
 
 ; if save button pressed return array[0] = hWnd array[1] = hControlWnd, otheriwse $array[2] = [0,0]
@@ -804,6 +845,7 @@ Func jump($xCordClick, $yCordClick, $currentSleep)
 		
 		; put game on top and perform real click
 		WinSetOnTop($hWnd, "", $WINDOWS_ONTOP)
+		Local $windowAbsolutePosition = WinGetPos($hWnd)
 		MouseClick($MOUSE_CLICK_LEFT, $windowAbsolutePosition[0] + 1151, $windowAbsolutePosition[1] + 399, 1, 10)
 		ConsoleWrite("REAL CLICK AT: " & $jumpCounter & @CRLF)
 		WinSetOnTop($hWnd, "", $WINDOWS_NOONTOP)
