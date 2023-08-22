@@ -8,6 +8,8 @@
 $GUI_BOT = GUICreate("Hunting Bot", 615, 445, -1, -1)
 GUISetBkColor(0xFFFBF0)
 $GROUP_HUNTING = GUICtrlCreateGroup("Hunting Points", 320, 8, 249, 385, BitOR($GUI_SS_DEFAULT_GROUP,$BS_CENTER), $WS_EX_TRANSPARENT)
+$CHBOX_RANDOM_CORDS = GUICtrlCreateCheckbox("Random order", 448, 200, 97, 25)
+GUICtrlSetState(-1, $GUI_CHECKED)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlSetState(-1, $GUI_DISABLE)
 $BTN_TYPE_VALIDATION_CODE = GUICtrlCreateButton("Auto type validation code", 24, 56, 139, 33)
@@ -235,14 +237,23 @@ Func start_hunt()
 			Sleep(Mod($currentSleep, 50))
 			scatter_y_down()
 		Else
-			ConsoleWrite("Change point!" & @CRLF)
-			_GUICtrlListBox_SetCurSel($LST_HUNTING_POINTS, _
+			$cordsCount = _GUICtrlListBox_GetCount($LST_HUNTING_POINTS)
+			If(GuiCtrlRead($CHBOX_RANDOM_CORDS) == $GUI_CHECKED) Then
+				_GUICtrlListBox_SetCurSel($LST_HUNTING_POINTS, _
 				Mod( _
-					_GUICtrlListBox_GetCaretIndex($LST_HUNTING_POINTS) + 1, _
-					_GUICtrlListBox_GetCount($LST_HUNTING_POINTS) _
+					Random(0, $cordsCount, 1),  _
+					$cordsCount  _
 					) _
 				)
-			$pointsIterator = Mod($pointsIterator + 1 , UBound($pointsToGo))
+			Else
+				_GUICtrlListBox_SetCurSel($LST_HUNTING_POINTS, _
+					Mod( _
+						_GUICtrlListBox_GetCaretIndex($LST_HUNTING_POINTS) + 1, _
+						$cordsCount  _
+						) _
+					)
+			EndIf
+			$pointsIterator = _GUICtrlListBox_GetCaretIndex($LST_HUNTING_POINTS)
 		EndIf
 
 		Sleep($currentSleep)
