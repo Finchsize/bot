@@ -205,6 +205,8 @@ Func start_hunt()
 		Local $goToPointX = ($pointsToGo[$pointsIterator])[0]
 		Local $goToPointY = ($pointsToGo[$pointsIterator])[1]
 
+		ConsoleWrite("Going to X: " & $goToPointX & " Y: " & $goToPointY & @CRLF)
+
 		; straight jump
 		If($currentXpos - 8 > $goToPointX And $currentYpos - 8 > $goToPointY) Then
 			jump_up($currentSleep)
@@ -451,7 +453,7 @@ Func add_point_manually()
 	_GUICtrlListBox_AddString($LST_HUNTING_POINTS, $newValue)
 	_GUICtrlListBox_EndUpdate($LST_HUNTING_POINTS)
 	
-	read_points_from_list()
+	$pointsToGo = split_points_to_array(read_points_from_list())
 EndFunc
 
 Func save_points_to_file()
@@ -482,13 +484,13 @@ Func add_point_automatically()
 	_GUICtrlListBox_AddString($LST_HUNTING_POINTS, $currentXpos & "," & $currentYpos)
 	_GUICtrlListBox_EndUpdate($LST_HUNTING_POINTS)
 
-	read_points_from_list()
+	$pointsToGo = split_points_to_array(read_points_from_list())
 EndFunc
 
 Func delete_point()
 	_GUICtrlListBox_DeleteString($LST_HUNTING_POINTS, _GUICtrlListBox_GetCaretIndex($LST_HUNTING_POINTS))
 
-	read_points_from_list()
+	$pointsToGo = split_points_to_array(read_points_from_list())
 EndFunc
 
 Func edit_point()
@@ -503,7 +505,7 @@ Func edit_point()
 	_GUICtrlListBox_ReplaceString($LST_HUNTING_POINTS, $selectedItemIndex, $newValue)
 	_GUICtrlListBox_EndUpdate($LST_HUNTING_POINTS)
 
-	read_points_from_list()
+	$pointsToGo = split_points_to_array(read_points_from_list())
 EndFunc
 
 Func load_points_from_file()
@@ -532,10 +534,7 @@ Func load_points_from_file()
 	_GUICtrlListBox_EndUpdate($LST_HUNTING_POINTS)
 
 	; put into list in script
-	Local $points = read_points_from_list()
-	$pointsToGo = split_points_to_array($points)
-
-	read_points_from_list()
+	$pointsToGo = split_points_to_array(read_points_from_list())
 EndFunc
 
 ; if save button pressed return array[0] = hWnd array[1] = hControlWnd, otheriwse $array[2] = [0,0]
@@ -657,8 +656,7 @@ Func initialize()
 	EndIf
 
 	; init default points
-	Local $points = read_points_from_list()
-	$pointsToGo = split_points_to_array($points)
+	$pointsToGo = split_points_to_array(read_points_from_list())
 EndFunc
 
 Func split_points_to_array($points)
