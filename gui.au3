@@ -281,30 +281,20 @@ Func type_validation_code()
 	Sleep(200)
 
 	; capture the code value
-	process_image($scriptTempDir & "\entire_screen_anytbot.tiff", $scriptTempDir & "\cropped_antybot.tiff", 878, 950, 60, 980)
+	process_image($scriptTempDir & "\entire_screen_anytbot.tiff", $scriptTempDir & "\cropped_antybot.tiff", 882, 950, 64, 1005)
 	Sleep(200)
 
 	; run tesseract to decode the value from image to text
-	run_tesseract($scriptTempDir & "\antybot_code", $scriptTempDir & "\cropped_antybot.tiff")
-	Sleep(200)
+	Local $validationCode = perform_ocr($scriptTempDir & "\cropped_antybot.tiff")
+	Sleep(100)
 	
 	; click on text field
 	MouseClick("left", $windowAbsolutePosition[0] + 784, $windowAbsolutePosition[1] + 126, 1, 10)
 	Sleep(150)
 
-	; open the file with code to put
-	Local $hFileOpen = FileOpen($scriptTempDir & "\antybot_code" & ".txt", $FO_READ)
-	If $hFileOpen = -1 Then
-			ToolTip("An error occurred when reading the file. File Path: " & $scriptTempDir & "\antybot_code" & ".txt", 30, 0)
-			Return
-	EndIf
-
-	; read text file and send value to input
-	Local $sOutput = FileRead($hFileOpen)
-	FileClose($hFileOpen)
-	Local $sOutputClean = StringReplace($sOutput, @LF, "")
-	ConsoleWrite("Verification code to be send: " & $sOutputClean & @CRLF)
-	Send($sOutputClean)
+	; send value to input
+	ConsoleWrite("Verification code to be send: " & $validationCode & @CRLF)
+	Send($validationCode)
 	Sleep(200)
 
 	; click on OK button
