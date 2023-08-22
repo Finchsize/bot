@@ -487,6 +487,7 @@ EndFunc
 
 Func delete_point()
 	_GUICtrlListBox_DeleteString($LST_HUNTING_POINTS, _GUICtrlListBox_GetCaretIndex($LST_HUNTING_POINTS))
+
 	read_points_from_list()
 EndFunc
 
