@@ -184,6 +184,8 @@ Func start_hunt()
 				Local $msg = GUIGetMsg()
 				Switch $msg
 					Case $BTN_STOP_HUNTING
+						_GUICtrlButton_SetText($BTN_STOP_HUNTING, "Stopping...")
+						GUICtrlSetState($BTN_STOP_HUNTING, $GUI_DISABLE)
 						$continueLoop = False
 				EndSwitch
 			Next
@@ -266,13 +268,17 @@ Func start_hunt()
 			Local $msg = GUIGetMsg()
 			Switch $msg
 				Case $BTN_STOP_HUNTING
+					_GUICtrlButton_SetText($BTN_STOP_HUNTING, "Stopping...")
+					GUICtrlSetState($BTN_STOP_HUNTING, $GUI_DISABLE)
 					$continueLoop = False
 			EndSwitch
 		Next
 	WEnd
 
+
+	ToolTip("")
 	GUICtrlSetState($BTN_START_HUNTING, $GUI_ENABLE)
-	GUICtrlSetState($BTN_STOP_HUNTING, $GUI_DISABLE)
+	_GUICtrlButton_SetText($BTN_STOP_HUNTING, "Stop hunting")
 EndFunc
 
 Func type_validation_code()
