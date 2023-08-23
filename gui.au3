@@ -166,6 +166,17 @@ Func start_hunt()
 		$lastSleepArray[$sleepArrayIterator] = $currentSleep
 		$sleepArrayIterator = Mod($sleepArrayIterator + 1, $randomSleepArraySize)
 
+		For $i = 0 To $currentSleep / 10 Step +1
+			Sleep(10)
+			Local $msg = GUIGetMsg()
+			Switch $msg
+				Case $BTN_STOP_HUNTING
+					_GUICtrlButton_SetText($BTN_STOP_HUNTING, "Stopping...")
+					GUICtrlSetState($BTN_STOP_HUNTING, $GUI_DISABLE)
+					$continueLoop = False
+			EndSwitch
+		Next
+
 		; get cords
 		capture_entire_window($scriptTempDir, "\cords_from_hunting.tiff")
 		process_image($scriptTempDir & "\cords_from_hunting.tiff", $scriptTempDir & "\cords_from_hunting_cropped.tiff", 73, 1802, 4, 1065)
@@ -193,7 +204,17 @@ Func start_hunt()
 		
 		; try to turn on cyclone
 		ControlClick($hWnd, "", "XP2", "left")
-		Sleep($currentSleep)
+		
+		For $i = 0 To $currentSleep / 10 Step +1
+			Sleep(10)
+			Local $msg = GUIGetMsg()
+			Switch $msg
+				Case $BTN_STOP_HUNTING
+					_GUICtrlButton_SetText($BTN_STOP_HUNTING, "Stopping...")
+					GUICtrlSetState($BTN_STOP_HUNTING, $GUI_DISABLE)
+					$continueLoop = False
+			EndSwitch
+		Next
 
 		; perform random jump if needed
 		$randomJumpCurrentIt = Mod($randomJumpCurrentIt + 1, $randomJumpFrequency)
