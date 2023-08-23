@@ -323,7 +323,7 @@ Func type_validation_code()
 
 	; click on NPC
 	MouseClick("left", $windowAbsolutePosition[0] + 1151, $windowAbsolutePosition[1] + 399, 1, 0)
-	Sleep(150)
+	Sleep(200)
 	#cs NPC click without mouse - WIP
 	Local $MK_CONTROL = 0x0008
 	Local $MK_LBUTTON = 0x0001
@@ -344,11 +344,11 @@ Func type_validation_code()
 
 	; run tesseract to decode the value from image to text
 	Local $validationCode = perform_ocr($scriptTempDir & "\cropped_antybot.tiff")
-	Sleep(100)
+	Sleep(200)
 	
 	; click on text field
 	MouseClick("left", $windowAbsolutePosition[0] + 784, $windowAbsolutePosition[1] + 126, 1, 10)
-	Sleep(150)
+	Sleep(200)
 
 	; send value to input
 	ConsoleWrite("Verification code to be send: " & $validationCode & @CRLF)
