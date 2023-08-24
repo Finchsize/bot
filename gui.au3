@@ -21,7 +21,6 @@ $BTN_GET_CORDS_IN_LOOP = GUICtrlCreateButton("Get cords in loop", 24, 96, 137, 3
 GUICtrlSetState(-1, $GUI_DISABLE)
 $BTN_GET_HANDLES = GUICtrlCreateButton("Get window handles", 24, 136, 139, 33)
 $LST_HUNTING_POINTS = GUICtrlCreateList("", 336, 35, 89, 344, BitOR($LBS_NOTIFY,$WS_VSCROLL,$WS_BORDER))
-GUICtrlSetData(-1, "")
 GUICtrlSetBkColor(-1, 0xFFFFFF)
 $BTN_DELETE_POINT = GUICtrlCreateButton("Delete Point", 440, 104, 107, 25)
 $BTN_EDIT_POINT = GUICtrlCreateButton("Edit Point", 440, 136, 107, 25)
