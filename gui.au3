@@ -309,6 +309,7 @@ Func type_validation_code()
 		Sleep(30)
 	WEnd
 	lock_mouse()
+	Sleep(2000) ; wait to seconds so other bots can finish their jumps etc
 	$hOldWndActive = WinGetHandle("[active]")
 	close_npc_message_box()
 	
