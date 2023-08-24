@@ -25,11 +25,6 @@ GUICtrlSetBkColor(-1, 0xFFFFFF)
 $BTN_DELETE_POINT = GUICtrlCreateButton("Delete Point", 440, 104, 107, 25)
 $BTN_EDIT_POINT = GUICtrlCreateButton("Edit Point", 440, 136, 107, 25)
 $BTN_LOAD_FROM_FILE = GUICtrlCreateButton("Load from file", 440, 168, 107, 25)
-$BTN_GAME_WINDOWS = GUICtrlCreateButton("Show open game windows", 16, 408, 139, 25)
-$INPUT_GAME_NAME = GUICtrlCreateInput("Conquer", 232, 408, 139, 21)
-$LABEL_CLIENT_NAME = GUICtrlCreateLabel("Client name", 160, 414, 59, 17)
-$BTN_SAVE_CONFIGURATION = GUICtrlCreateButton("Save configuration", 16, 344, 139, 25)
-$BTN_LOAD_CONFIGURATION = GUICtrlCreateButton("Load configuration", 16, 376, 139, 25)
 $BTN_ADD_POINT = GUICtrlCreateButton("Add Point", 440, 40, 107, 25)
 $BTN_ADD_POINT_AUTO = GUICtrlCreateButton("Add Point - AUTO", 440, 72, 107, 25)
 GUICtrlSetState(-1, $GUI_DISABLE)
@@ -42,6 +37,8 @@ GUICtrlSetState(-1, $GUI_DISABLE)
 $BTN_ROLL_INSTANCE_NAME = GUICtrlCreateButton("Change instance name", 168, 312, 129, 25)
 $LBL_BOT_INSTANCE_NAME = GUICtrlCreateLabel("Bot instance name:", 16, 288, 95, 17)
 $LABEL_HWND_INFO = GUICtrlCreateLabel(" Use ""Get Window handles"" to start hunting...", 26, 176, 246, 104, -1, $WS_EX_CLIENTEDGE)
+$LBL_CHARACTER_NAME = GUICtrlCreateLabel("Character Name:", 16, 344, 84, 17)
+$INPUT_CHARACTER_NAME = GUICtrlCreateInput("", 16, 368, 137, 21)
 GUISetState(@SW_SHOW)
 #EndRegion ### END Koda GUI section ###
 
@@ -118,10 +115,6 @@ While 1
 			load_points_from_file()
 		Case $BTN_ROLL_INSTANCE_NAME
 			roll_new_instance_name()
-		Case $BTN_SAVE_CONFIGURATION
-			save_configuration()
-		Case $BTN_LOAD_CONFIGURATION
-			load_configuration()
 		Case $BTN_SAVE_CORDS_TO_FILE
 			save_points_to_file()
 		Case $BTN_ADD_POINT
@@ -132,8 +125,6 @@ While 1
 			delete_point()
 		Case $BTN_EDIT_POINT
 			edit_point()
-		Case $BTN_GAME_WINDOWS
-			show_game_instances()
 		Case $GUI_EVENT_CLOSE
 			clean_exit()
 		Case $BTN_EXIT
@@ -457,22 +448,6 @@ Func roll_new_instance_name()
 	Return $result 
 EndFunc
 
-Func save_configuration()
-	Local Const $filePath = $scriptSaveDir & "\points.txt"
-	Local $pointsCount = _GUICtrlListBox_GetCount($LST_HUNTING_POINTS)
-	Local $pointsToSave = read_points_from_list()
-	Local $hFileOpen = FileOpen($filePath, $FO_OVERWRITE)
-	For $point In $pointsToSave
-		FileWriteLine($filePath, $point)
-	Next
-	FileClose($filePath)
-
-	MsgBox($MB_TASKMODAL, "Saved", "Configuration saved")
-EndFunc
-
-Func load_configuration()
-EndFunc
-
 Func add_point_manually()
 	Local $newValue = InputBox("Add cord", "Enter value as xxx,xxx example: 555,555", "")
 	_GUICtrlListBox_BeginUpdate($LST_HUNTING_POINTS)
@@ -640,12 +615,6 @@ Func get_window_info()
 		_WinAPI_GetDlgCtrlID($windowFromPoint[0])  _
 		]
 	Return $result
-EndFunc
-
-Func show_game_instances()
-	Local $windowsList = WinList("[REGEXPTITLE:(?i)(.*" & GUICtrlRead($INPUT_GAME_NAME) & ".*)]")
-	Local $hUserFunction = save_hwnd_from_array_display
-	_DebugArrayDisplay($windowsList, "Select", "1:", BitOR($ARRAYDISPLAY_NOROW, $ARRAYDISPLAY_COLALIGNLEFT), "|", "Client Title|Hwnd", 1000, $hUserFunction)
 EndFunc
 
 Func save_hwnd_from_array_display($aArray_2D, $aSelected)
