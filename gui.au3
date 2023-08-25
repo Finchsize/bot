@@ -144,8 +144,7 @@ Func start_hunt()
 	If ($isInBotCheck) Then
 		Return
 	EndIf
-	_GUICtrlListBox_SetCurSel($LST_HUNTING_POINTS, 0)
-	Local $pointsIterator = 0
+	
 	Local $sleepArrayIterator = 0
 	Local $lastSleepArray[$randomSleepArraySize]
 	Local $randomJumpCurrentIt = 0
@@ -156,16 +155,33 @@ Func start_hunt()
 	Local $checkDeadStatusFrequency = 10
 
 	While $continueLoop
+		Local $currentSelectedPointIndex = _GUICtrlListBox_GetCaretIndex($LST_HUNTING_POINTS)
+
+		If($currentSelectedPointIndex == 0) Then
+			_GUICtrlListBox_SetCurSel($LST_HUNTING_POINTS, 0)
+			$currentSelectedPointIndex = 0
+		EndIf
+
+		; check if character is dead
 		If (Mod($isDeadIterator, $checkDeadStatusFrequency) == 0 And is_character_dead()) Then
-			ConsoleWrite("Character is dead, waiting 21 seconds to click revive here" & @CRLF)
+			ConsoleWrite("Character is dead" & @CRLF)
 			Local $beginDead = TimerInit()
 			While (TimerDiff($beginDead) < 21000 )
-				Sleep(100)
+				For $i = 0 To 10 Step +1
+					Sleep(10)
+					Local $msg = GUIGetMsg()
+					Switch $msg
+						Case $BTN_STOP_HUNTING
+							_GUICtrlButton_SetText($BTN_STOP_HUNTING, "Stopping...")
+							GUICtrlSetState($BTN_STOP_HUNTING, $GUI_DISABLE)
+							$continueLoop = False
+					EndSwitch
+				Next
 			WEnd
-			;revive here
+			;press revive here
 			ConsoleWrite("Revive here clicked" & @CRLF)
 			ControlClick($hWnd, "", "XP2", "left")
-			Sleep(200)
+			Sleep(100)
 			If(is_character_dead()) Then
 				ConsoleWrite("Character still dead, waiting 1 more second to retry revive" & @CRLF)
 				Sleep(1000)
@@ -174,6 +190,11 @@ Func start_hunt()
 			ContinueLoop
 		Else
 			$isDeadIterator = Mod($isDeadIterator, $checkDeadStatusFrequency)
+		EndIf
+
+		; check if stop loop was pressed during waiting
+		If (Not $continueLoop) Then
+			ExitLoop
 		EndIf
 		
 		; prepare random sleep time
@@ -195,7 +216,7 @@ Func start_hunt()
 			EndSwitch
 		Next
 
-		; get cords
+		; get current cords
 		capture_entire_window($scriptTempDir, "\cords_from_hunting.tiff")
 		process_image($scriptTempDir & "\cords_from_hunting.tiff", $scriptTempDir & "\cords_from_hunting_cropped.tiff", 73, 1802, 4, 1065)
 		Local $currentCords = perform_ocr($scriptTempDir & "\cords_from_hunting_cropped.tiff")
@@ -204,7 +225,8 @@ Func start_hunt()
 			$currentXpos = Number(StringLeft($currentCords, 3))
 			$currentYpos = Number(StringRight($currentCords, 3))
 		EndIf
-		
+
+		; validation code area check
 		If $currentXpos == 51 And $currentYpos == 51 Then
 			close_npc_message_box()
 			type_validation_code()
@@ -218,6 +240,7 @@ Func start_hunt()
 						$continueLoop = False
 				EndSwitch
 			Next
+			ContinueLoop
 		EndIf
 		
 		; try to turn on cyclone
@@ -242,8 +265,8 @@ Func start_hunt()
 		EndIf
 		
 		; get jump + scatter points from array
-		Local $goToPointX = ($pointsToGo[$pointsIterator])[0]
-		Local $goToPointY = ($pointsToGo[$pointsIterator])[1]
+		Local $goToPointX = ($pointsToGo[$currentSelectedPointIndex])[0]
+		Local $goToPointY = ($pointsToGo[$currentSelectedPointIndex])[1]
 
 		ConsoleWrite("Going to X: " & $goToPointX & " Y: " & $goToPointY & @CRLF)
 
@@ -298,11 +321,9 @@ Func start_hunt()
 						) _
 					)
 			EndIf
-			$pointsIterator = _GUICtrlListBox_GetCaretIndex($LST_HUNTING_POINTS)
 		EndIf
 
-		Sleep($currentSleep)
-		For $i = 0 To 50 Step +1
+		For $i = 0 To 40 Step +1
 			Sleep(10)
 			Local $msg = GUIGetMsg()
 			Switch $msg
@@ -323,12 +344,13 @@ EndFunc
 Func type_validation_code()
 	ConsoleWrite("AntyBot has been triggered!" & @CRLF)
 	$isInBotCheck = True
-	While (check_if_mouse_is_locked() == 1)
-		Sleep(30)
+	While(is_mouse_locked())
+		Sleep(10)
 	WEnd
 	lock_mouse()
-	Sleep(2000) ; wait to seconds so other bots can finish their jumps etc
-	$hOldWndActive = WinGetHandle("[active]")
+	Sleep(2000) ; wait two seconds so other bots can finish their jumps etc
+	Local $hOldWndActive = WinGetHandle("[active]")
+	Local $oldMousePos = MouseGetPos()
 	close_npc_message_box()
 	
 	Local $windowAbsolutePosition = WinGetPos($hWnd)
@@ -391,6 +413,7 @@ Func type_validation_code()
 	AutoItSetOption("MouseClickDelay", 10)
 
 	; return PC to user - put old window as active
+	MouseMove($oldMousePos[0], $oldMousePos[1], 0)
 	WinSetOnTop($hOldWndActive, "", $WINDOWS_ONTOP)
 	WinSetState($hOldWndActive, "", @SW_SHOW)
 	WinActivate($hOldWndActive)
@@ -885,14 +908,13 @@ Func jump($xCordClick, $yCordClick, $currentSleep)
 
 	; anty bot jail protection
 	If ($currentClickCountCycle == 0) Then
-		While (check_if_mouse_is_locked() == 1)
-			Sleep(30)
+		While (is_mouse_locked())
+			Sleep(10)
 		WEnd
 		lock_mouse()
 		Local $hOldWndActive = WinGetHandle("[active]")
 		Local $oldMousePos = MouseGetPos()
 		ToolTip("Mouse will be taken in: 0")
-		Sleep(80)
 		
 		; put game on top and perform real click
 		WinSetOnTop($hWnd, "", $WINDOWS_ONTOP)
@@ -912,6 +934,7 @@ Func jump($xCordClick, $yCordClick, $currentSleep)
 		; cleanup
 		ToolTip("")
 		unlock_mouse()
+		Sleep($currentSleep * 5)
 		Return
 	EndIf
 	
@@ -924,6 +947,7 @@ Func jump($xCordClick, $yCordClick, $currentSleep)
 	Sleep($currentSleep)
 	$lParam = _WinAPI_MakeLong($currentSleep - 20, $currentSleep - 20)
 	_WinAPI_PostMessage($hWndControl, $WM_LBUTTONUP, $MK_CONTROL, $lParam)
+	Sleep($currentSleep)
 EndFunc
 
 Func scatter($xCordClick, $yCordClick)
@@ -932,11 +956,17 @@ Func scatter($xCordClick, $yCordClick)
 	_SendMessage($hWndControl, $WM_RBUTTONDOWN, $wParam , $lParam)
 	Sleep(Random(30, 80, 1))
 	_SendMessage($hWndControl, $WM_RBUTTONUP, $wParam , $lParam)
+	Sleep(Random(30, 80, 1))
 EndFunc
 
 Func lock_mouse()
-	Local Const $filePath = @ScriptDir & "\temp\mouse_taken.lock"
-	_FileCreate($filePath)
+	If(Not is_mouse_locked()) Then
+		Local Const $filePath = @ScriptDir & "\temp\mouse_taken.lock"
+		_FileCreate($filePath)
+	Else
+		Sleep(10)
+		lock_mouse()
+	EndIf
 EndFunc
 
 Func unlock_mouse()
@@ -944,17 +974,16 @@ Func unlock_mouse()
 	FileDelete($filePath)
 EndFunc
 
-; return 1 if file is there 0 if not
-Func check_if_mouse_is_locked()
+
+Func is_mouse_locked()
 	Local Const $filePath = @ScriptDir & "\temp\mouse_taken.lock"
-	Return FileExists($filePath)
+	; return 1 if file exists 0 otherwise
+	Return FileExists($filePath) == 1
 EndFunc
 
 Func is_character_dead()
 	capture_entire_window($scriptTempDir, "\dead_entire_screen.tiff")
+	Sleep(100)
 	process_image($scriptTempDir & "\dead_entire_screen.tiff", $scriptTempDir & "\dead_cropped.tiff" , 1820, 51, 930, 135, False)
-	Local $isDead = False
-	Local $isDead = compare_images("C:\Users\danie\Desktop\au3\bot\utils\revive_button_cropped.tiff", $scriptTempDir & "\dead_cropped.tiff")
-
-	Return $isDead
+	Return compare_images("C:\Users\danie\Desktop\au3\bot\utils\revive_button_cropped.tiff", $scriptTempDir & "\dead_cropped.tiff")
 EndFunc
