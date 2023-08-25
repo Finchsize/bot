@@ -365,5 +365,20 @@
 			</properties>
 			<components/>
 		</object>
+		<object type="TAButton" name="BTN_TEST">
+			<properties>
+				<property name="Left" vt="Int8">16</property>
+				<property name="Top" vt="Int16">400</property>
+				<property name="Width" vt="Int16">145</property>
+				<property name="Height" vt="Int8">33</property>
+				<property name="Caption" vt="String">Test</property>
+				<property name="TabOrder" vt="Int8">20</property>
+				<property name="Color" vt="Ident">clBtnFace</property>
+				<property name="CtrlStyle" vt="Int32">1342373888</property>
+				<property name="CtrlExStyle" vt="Int8">0</property>
+				<property name="Resizing" vt="Set">DockWidth, DockHeight</property>
+			</properties>
+			<components/>
+		</object>
 	</components>
 </object>

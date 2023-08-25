@@ -39,6 +39,7 @@ $LBL_BOT_INSTANCE_NAME = GUICtrlCreateLabel("Bot instance name:", 16, 288, 95, 1
 $LABEL_HWND_INFO = GUICtrlCreateLabel(" Use ""Get Window handles"" to start hunting...", 26, 176, 246, 104, -1, $WS_EX_CLIENTEDGE)
 $LBL_CHARACTER_NAME = GUICtrlCreateLabel("Character Name:", 16, 344, 84, 17)
 $INPUT_CHARACTER_NAME = GUICtrlCreateInput("", 16, 368, 137, 21)
+$BTN_TEST = GUICtrlCreateButton("Test", 16, 400, 145, 33)
 GUISetState(@SW_SHOW)
 #EndRegion ### END Koda GUI section ###
 
@@ -49,7 +50,6 @@ GUISetState(@SW_SHOW)
 #include <WindowsConstants.au3>
 #include <WinAPIConv.au3>
 #include <WinAPIGdi.au3>
-#include <ScreenCapture.au3>
 #include <GDIPlus.au3>
 #include <WinAPIFiles.au3>
 #include <Array.au3>
@@ -71,7 +71,6 @@ Global $randomSleepArraySize = 15
 Global $randomJumpFrequency = 5
 Global $instanceName = ""
 Global $scriptTempDir = ""
-Global $scriptSaveDir = ""
 Global $pointsToGo[0]
 Global $isInBotCheck = False
 
@@ -129,8 +128,15 @@ While 1
 			clean_exit()
 		Case $BTN_EXIT
 			clean_exit()
+		Case $BTN_TEST
+			test()
 	EndSwitch
 WEnd
+
+Func test()
+	ConsoleWrite("Is ded : " & is_character_dead() & @CRLF)
+	Return 
+EndFunc
 
 Func start_hunt()
 	GUICtrlSetState($BTN_START_HUNTING, $GUI_DISABLE)
@@ -146,8 +152,30 @@ Func start_hunt()
 	Local $continueLoop = True
 	Local $currentXpos = 0
 	Local $currentYpos = 0
+	Local $isDeadIterator = 0
+	Local $checkDeadStatusFrequency = 10
 
 	While $continueLoop
+		If (Mod($isDeadIterator, $checkDeadStatusFrequency) == 0 And is_character_dead()) Then
+			ConsoleWrite("Character is dead, waiting 21 seconds to click revive here" & @CRLF)
+			Local $beginDead = TimerInit()
+			While (TimerDiff($beginDead) < 21000 )
+				Sleep(100)
+			WEnd
+			;revive here
+			ConsoleWrite("Revive here clicked" & @CRLF)
+			ControlClick($hWnd, "", "XP2", "left")
+			Sleep(200)
+			If(is_character_dead()) Then
+				ConsoleWrite("Character still dead, waiting 1 more second to retry revive" & @CRLF)
+				Sleep(1000)
+				ControlClick($hWnd, "", "XP2", "left")
+			EndIf
+			ContinueLoop
+		Else
+			$isDeadIterator = Mod($isDeadIterator, $checkDeadStatusFrequency)
+		EndIf
+		
 		; prepare random sleep time
 		Local $currentSleep = Random(5, 20, 1) * 10
 		While _ArraySearch($lastSleepArray, $currentSleep) <> -1
@@ -641,13 +669,8 @@ Func initialize()
 	; init directories
 	$instanceName = roll_new_instance_name()
 	$scriptTempDir = @ScriptDir & "\temp\" & $instanceName 
-	$scriptSaveDir = @ScriptDir & "\saved\" & $instanceName
 	If Not FileExists($scriptTempDir) Then
 		DirCreate($scriptTempDir)
-	EndIf
-
-	If Not FileExists($scriptSaveDir) Then
-		DirCreate($scriptSaveDir)
 	EndIf
 
 	; init default points
@@ -677,18 +700,24 @@ Func capture_entire_window($imageOutPath, $imageOutName)
 	Local $hDC_Capture = _WinAPI_GetDC($hWnd)
 	Local $hMemDC = _WinAPI_CreateCompatibleDC($hDC_Capture)
 	Local $hBitmap = _WinAPI_CreateCompatibleBitmap($hDC_Capture, $clientWidth, $clientHeight)
-
-	; save to file
+	
 	_WinAPI_SelectObject($hMemDC, $hBitmap)
+	; this instruction is freezing client
 	_WinAPI_PrintWindow($hWnd, $hMemDC)
 	_WinAPI_SaveHBITMAPToFile($imageOutPath & $imageOutName, $hBitmap)
+
+	; unfreeze screen
+	Local $MK_CONTROL = 0x0008
+	Local $MK_LBUTTON = 0x0001
+	Local $lParam = _WinAPI_MakeLong(960, 540)
+	_WinAPI_PostMessage($hWndControl, $WM_MOUSEMOVE, $MK_CONTROL, $lParam)
 
 	; cleanup
 	_WinAPI_ReleaseDC($hWnd, $hDC_Capture)
 	_WinAPI_ReleaseDC(0, $hMemDC)
 	_WinAPI_DeleteDC($hMemDC)
 	_WinAPI_DeleteObject($hBitmap)
-	
+
 EndFunc
 
 #cs Function process image as follows:
@@ -697,7 +726,7 @@ EndFunc
 - remove background 
 - set background color to black
 #ce
-Func process_image($imageFilePathOld, $imageFilePathNew, $cropLeft, $cropRight, $cropTop = 0, $cropBottom = 0)
+Func process_image($imageFilePathOld, $imageFilePathNew, $cropLeft, $cropRight, $cropTop = 0, $cropBottom = 0, $replace_colors = True)
 	
 	_GDIPlus_Startup()
 
@@ -706,37 +735,39 @@ Func process_image($imageFilePathOld, $imageFilePathNew, $cropLeft, $cropRight, 
 	Local $iX = _GDIPlus_ImageGetWidth($hImage)
 	Local $iY = _GDIPlus_ImageGetHeight($hImage)
 	Local $hImageCropped = _GDIPlus_BitmapCloneArea($hImage, $cropLeft, $cropTop, $iX-$cropLeft-$cropRight, $iY-$cropTop-$cropBottom, $GDIP_PXF32ARGB)
-
-	; set text color to white
-    Local $hGraphics = _GDIPlus_ImageGetGraphicsContext($hImageCropped)
-	Local $aRemapTable[3][2]
-    $aRemapTable[0][0] = 2
-    $aRemapTable[1][0] = 0xFF7F7F7F ;Old Color - letters shadow
-    $aRemapTable[1][1] = 0xFF000000 ;New Color - letters shadow deleted
-    $aRemapTable[2][0] = 0xFFFFFF00 ;Old Color - letters color (yellow)
-    $aRemapTable[2][1] = 0xFFFFFFFF ;New Color - letter color (white)
-	Local $hIA = _GDIPlus_ImageAttributesCreate()
-    _GDIPlus_ImageAttributesSetRemapTable($hIA, $aRemapTable)
-	_GDIPlus_GraphicsDrawImageRectRect($hGraphics, $hImageCropped, 0, 0, $iX, $iY, 0, 0, $iX, $iY, $hIA)
+	If ($replace_colors) Then
+		; set text color to white
+		Local $hGraphics = _GDIPlus_ImageGetGraphicsContext($hImageCropped)
+		Local $aRemapTable[3][2]
+		$aRemapTable[0][0] = 2
+		$aRemapTable[1][0] = 0xFF7F7F7F ;Old Color - letters shadow
+		$aRemapTable[1][1] = 0xFF000000 ;New Color - letters shadow deleted
+		$aRemapTable[2][0] = 0xFFFFFF00 ;Old Color - letters color (yellow)
+		$aRemapTable[2][1] = 0xFFFFFFFF ;New Color - letter color (white)
+		Local $hIA = _GDIPlus_ImageAttributesCreate()
+		_GDIPlus_ImageAttributesSetRemapTable($hIA, $aRemapTable)
+		_GDIPlus_GraphicsDrawImageRectRect($hGraphics, $hImageCropped, 0, 0, $iX, $iY, 0, 0, $iX, $iY, $hIA)
+		
+		Local $iWidth = _GDIPlus_ImageGetWidth($hImageCropped)
+		Local $iHeight = _GDIPlus_ImageGetHeight($hImageCropped)
+		Local $tLock = _GDIPlus_BitmapLockBits($hImageCropped, 0, 0, $iWidth, $iHeight,  BitOR($GDIP_ILMWRITE, $GDIP_ILMREAD), $GDIP_PXF32ARGB)
+		Local $tPixel = DllStructCreate("int color[" & $iWidth * $iHeight & "];", $tLock.scan0)
 	
-	Local $iWidth = _GDIPlus_ImageGetWidth($hImageCropped)
-	Local $iHeight = _GDIPlus_ImageGetHeight($hImageCropped)
-	Local $tLock = _GDIPlus_BitmapLockBits($hImageCropped, 0, 0, $iWidth, $iHeight,  BitOR($GDIP_ILMWRITE, $GDIP_ILMREAD), $GDIP_PXF32ARGB)
-	Local $tPixel = DllStructCreate("int color[" & $iWidth * $iHeight & "];", $tLock.scan0)
+		; set background color to black
+		For $i = 1 To $iWidth * $iHeight
+		  If $tPixel.color(($i)) <> 0xFFFFFFFF Then $tPixel.color(($i)) = 0xFF000000
+		Next
 
-	; set background color to black
-	For $i = 1 To $iWidth * $iHeight
-	  If $tPixel.color(($i)) <> 0xFFFFFFFF Then $tPixel.color(($i)) = 0xFF000000
-	Next
+		_GDIPlus_GraphicsDispose($hGraphics)
+		_GDIPlus_BitmapUnlockBits($hImageCropped, $tPixel)
+		_GDIPlus_ImageAttributesDispose($hIA)
+	EndIf
 	
 	;save
-	_GDIPlus_BitmapUnlockBits($hImageCropped, $tPixel)
 	_GDIPlus_ImageSaveToFile($hImageCropped, $imageFilePathNew)
 
 	;clean handles etc
-	_GDIPlus_ImageAttributesDispose($hIA)
     _GDIPlus_ImageDispose($hImageCropped)
-	_GDIPlus_GraphicsDispose($hGraphics)
 	_GDIPlus_ImageDispose($hImage)
     _GDIPlus_Shutdown()
 EndFunc
@@ -917,4 +948,13 @@ EndFunc
 Func check_if_mouse_is_locked()
 	Local Const $filePath = @ScriptDir & "\temp\mouse_taken.lock"
 	Return FileExists($filePath)
+EndFunc
+
+Func is_character_dead()
+	capture_entire_window($scriptTempDir, "\dead_entire_screen.tiff")
+	process_image($scriptTempDir & "\dead_entire_screen.tiff", $scriptTempDir & "\dead_cropped.tiff" , 1820, 51, 930, 135, False)
+	Local $isDead = False
+	Local $isDead = compare_images("C:\Users\danie\Desktop\au3\bot\utils\revive_button_cropped.tiff", $scriptTempDir & "\dead_cropped.tiff")
+
+	Return $isDead
 EndFunc

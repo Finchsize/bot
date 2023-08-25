@@ -1,6 +1,56 @@
 #include <GDIPlus.au3>
 #include <array.au3>
 
+Func compare_images($filePath_1, $filePath_2)
+	Local $begin = TimerInit()
+
+	_GDIPlus_Startup()
+	Local $hImage_1 = _GDIPlus_BitmapCreateFromFile($filePath_1)
+	Local $iX_1 = _GDIPlus_ImageGetWidth($hImage_1)
+	Local $iY_1 = _GDIPlus_ImageGetHeight($hImage_1)
+	Local $hImageConverted_1 = _GDIPlus_BitmapCloneArea($hImage_1, 0, 0, $iX_1, $iY_1, $GDIP_PXF32ARGB)
+
+	Local $iWidth_1 = _GDIPlus_ImageGetWidth($hImageConverted_1)
+	Local $iHeight_1 = _GDIPlus_ImageGetHeight($hImageConverted_1)
+	Local $tLock_1 = _GDIPlus_BitmapLockBits($hImageConverted_1, 0, 0, $iWidth_1, $iHeight_1,  $GDIP_ILMREAD, $GDIP_PXF32ARGB)
+	Local $iScan0_1 = DllStructGetData($tLock_1, "Scan0") ;get scan0 (pixel data) from locked bitmap
+	Local $tPixel_1 = DllStructCreate("int color[" & $iWidth_1 * $iHeight_1 & "];", $iScan0_1)
+
+	Local $hImage_2 = _GDIPlus_BitmapCreateFromFile($filePath_2)
+	Local $iX_2 = _GDIPlus_ImageGetWidth($hImage_2)
+	Local $iY_2 = _GDIPlus_ImageGetHeight($hImage_2)
+	Local $hImageConverted_2 = _GDIPlus_BitmapCloneArea($hImage_2, 0, 0, $iX_2, $iY_2, $GDIP_PXF32ARGB)
+
+	Local $iWidth_2 = _GDIPlus_ImageGetWidth($hImageConverted_2)
+	Local $iHeight_2 = _GDIPlus_ImageGetHeight($hImageConverted_2)
+	Local $tLock_2 = _GDIPlus_BitmapLockBits($hImageConverted_2, 0, 0, $iWidth_2, $iHeight_2,  $GDIP_ILMREAD, $GDIP_PXF32ARGB)
+	Local $iScan0_2 = DllStructGetData($tLock_2, "Scan0") ;get scan0 (pixel data) from locked bitmap
+	Local $tPixel_2 = DllStructCreate("int color[" & $iWidth_2 * $iHeight_2 & "];", $iScan0_2)
+
+	Local $result = True
+
+	For $i = 1 To $iWidth_1 * $iHeight_1
+		If $tPixel_1.color(($i)) <> $tPixel_2.color(($i)) Then
+			$result = False
+			ExitLoop
+		EndIf
+	Next
+
+	_GDIPlus_BitmapUnlockBits($hImageConverted_1, $tLock_1)
+	_GDIPlus_BitmapUnlockBits($hImageConverted_1, $tPixel_1)
+    _GDIPlus_ImageDispose($hImageConverted_1)
+	_GDIPlus_ImageDispose($hImage_1)
+
+	_GDIPlus_BitmapUnlockBits($hImageConverted_2, $tLock_2)
+	_GDIPlus_BitmapUnlockBits($hImageConverted_2, $tPixel_2)
+    _GDIPlus_ImageDispose($hImageConverted_2)
+	_GDIPlus_ImageDispose($hImage_2)
+
+    _GDIPlus_Shutdown()
+
+	Return $result
+EndFunc
+
 Func perform_ocr($filePath)
 
 	_GDIPlus_Startup()
