@@ -348,7 +348,15 @@ Func type_validation_code()
 		Sleep(10)
 	WEnd
 	lock_mouse()
-	Sleep(2000) ; wait two seconds so other bots can finish their jumps etc
+
+	; wait two seconds so other bots can finish their jumps etc
+	Local $begin = TimerInit()
+	For $i = 0 To 100 Step +1
+		Sleep(20)
+		ToolTip("Mouse will be taken by antybot in: " & (2000 - TimerDiff($begin))/1000 & " seconds.")
+	Next
+	ToolTip("")
+	
 	Local $hOldWndActive = WinGetHandle("[active]")
 	Local $oldMousePos = MouseGetPos()
 	close_npc_message_box()
@@ -934,7 +942,7 @@ Func jump($xCordClick, $yCordClick, $currentSleep)
 		; cleanup
 		ToolTip("")
 		unlock_mouse()
-		Sleep($currentSleep * 5)
+		Sleep(300)
 		Return
 	EndIf
 	
