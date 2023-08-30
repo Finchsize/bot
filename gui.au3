@@ -68,7 +68,7 @@ GUISetIcon(@ScriptDir & "\bot.ico")
 TraySetIcon(@ScriptDir & "\bot.ico")
 
 Global $randomSleepArraySize = 15
-Global $randomJumpFrequency = 5
+Global $randomJumpFrequency = 3
 Global $instanceName = ""
 Global $scriptTempDir = ""
 Global $pointsToGo[0]
@@ -80,7 +80,7 @@ Global $iCenterPosY = 540
 
 ; is being use to perform a real click from time to time to prevent bot jail
 $jumpCounter = 0
-$realJumpFrequency = 50
+$realJumpFrequency = 45
 
 Global $hWnd = 0
 Global $hWndControl = 0
